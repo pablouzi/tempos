@@ -4,7 +4,7 @@ export interface Ingredient {
   nombre: string; // e.g., "Café en Grano"
   unidad: string; // e.g., "g", "ml"
   stock: number;
-  stockMinimo?: number; // Threshold for low stock alert
+  stockMinimo?: number; // Threshold for low stock alerta
   costoPorUnidad?: number; // New: Cost per unit (e.g., cost of 1g of coffee)
 }
 
