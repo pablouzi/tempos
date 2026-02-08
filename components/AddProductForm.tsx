@@ -20,13 +20,17 @@ const DIETARY_OPTIONS = [
   { id: 'lactose_free', label: 'Sin Lactosa 🥛' }
 ];
 
+const SUGGESTED_CATEGORIES = ['Cafetería', 'Pastelería', 'Bebidas Frías', 'Sandwiches', 'Otros'];
+
 const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) => {
   const [nombre, setNombre] = useState('');
   const [precio, setPrecio] = useState('');
-  const [imagenUrl, setImagenUrl] = useState('https://picsum.photos/200');
+  const [imagenUrl, setImagenUrl] = useState('https://picsum.photos/id/42/300');
+  const [category, setCategory] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [givesStamp, setGivesStamp] = useState(true); // Default to true for coffee shop
+  const [givesStamp, setGivesStamp] = useState(true); 
+  const [costoCompra, setCostoCompra] = useState(''); // New: Direct cost
   
   // Data for Select
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
@@ -109,9 +113,11 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
         return;
     }
 
-    if (recipe.length === 0) {
-        window.Swal.fire('Receta vacía', 'Debes agregar al menos un insumo a la receta', 'warning');
-        return;
+    // Cost Logic
+    let directCost = 0;
+    if (costoCompra) {
+        directCost = parseFloat(costoCompra);
+        if(isNaN(directCost)) directCost = 0;
     }
 
     // Prepare for DB (remove UI helper fields)
@@ -125,10 +131,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
             nombre,
             precio: priceNum,
             imagen_url: imagenUrl,
+            category: category || 'Otros', // Default category
             receta: cleanRecipe,
             tags: tags,
             descripcion: descripcion.trim(),
-            givesStamp: givesStamp
+            givesStamp: givesStamp,
+            costoCompra: directCost
         });
         
         window.Swal.fire('Éxito', 'Producto creado correctamente', 'success');
@@ -139,7 +147,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg animate-fade-in">
       <h2 className="text-2xl font-bold text-coffee-800 mb-6">Crear Nuevo Producto</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -156,7 +164,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Precio (CLP)</label>
+                <label className="block text-sm font-medium text-gray-700">Precio Venta (CLP)</label>
                 <input 
                     type="number" 
                     step="10"
@@ -168,18 +176,35 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
             </div>
         </div>
 
-        {/* Loyalty Checkbox */}
-        <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <input
-                id="givesStamp"
-                type="checkbox"
-                checked={givesStamp}
-                onChange={e => setGivesStamp(e.target.checked)}
-                className="h-5 w-5 text-coffee-600 focus:ring-coffee-500 border-gray-300 rounded cursor-pointer"
-            />
-            <label htmlFor="givesStamp" className="ml-3 block text-sm font-bold text-coffee-900 cursor-pointer">
-                🏅 Acumula Sello para Meta (10 sellos = 1 Gratis)
-            </label>
+        {/* Category & Loyalty */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                <input
+                    list="category-suggestions"
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className="mt-1 block w-full bg-gray-50 rounded-md border-gray-300 shadow-sm border p-2 focus:border-coffee-500 focus:ring-coffee-500 text-gray-900"
+                    placeholder="Ej: Cafetería"
+                />
+                <datalist id="category-suggestions">
+                    {SUGGESTED_CATEGORIES.map(c => <option key={c} value={c} />)}
+                </datalist>
+            </div>
+            <div className="flex items-end">
+                <div className="flex items-center p-2 bg-yellow-50 border border-yellow-200 rounded-md w-full h-[42px]">
+                    <input
+                        id="givesStamp"
+                        type="checkbox"
+                        checked={givesStamp}
+                        onChange={e => setGivesStamp(e.target.checked)}
+                        className="h-5 w-5 text-coffee-600 focus:ring-coffee-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label htmlFor="givesStamp" className="ml-3 block text-sm font-bold text-coffee-900 cursor-pointer">
+                        🏅 Acumula Sello
+                    </label>
+                </div>
+            </div>
         </div>
 
         {/* Description & Tags */}
@@ -224,59 +249,69 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
                 className="mt-1 block w-full bg-gray-50 rounded-md border-gray-300 shadow-sm border p-2 focus:border-coffee-500 focus:ring-coffee-500 text-gray-900"
                 placeholder="https://..."
             />
-            {imagenUrl && (
-                <div className="mt-2 h-20 w-20 bg-gray-100 rounded overflow-hidden">
-                    <img src={imagenUrl} alt="Preview" className="h-full w-full object-cover" />
-                </div>
-            )}
         </div>
 
         <hr className="border-gray-200" />
 
         {/* Recipe Builder */}
-        <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Receta (Descuento de Inventario)</h3>
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-bold text-coffee-800 mb-3">Receta / Costos</h3>
             
-            <div className="flex gap-2 items-end mb-4 bg-gray-50 p-4 rounded-md border border-gray-200">
+            <p className="text-xs text-gray-500 mb-4">
+                Si agregas ingredientes, el costo se calculará automáticamente al vender. Si es un producto de re-venta (ej: bebida), ingresa el Costo Directo.
+            </p>
+
+            {recipe.length === 0 && (
+                <div className="mb-4">
+                    <label className="block text-sm font-bold text-blue-800">Costo Directo (Sin Receta)</label>
+                    <input 
+                        type="number" 
+                        value={costoCompra} 
+                        onChange={e => setCostoCompra(e.target.value)}
+                        className="mt-1 block w-full bg-white rounded-md border-blue-300 shadow-sm border p-2 focus:ring-blue-500 text-gray-900"
+                        placeholder="Ej: 500 (Costo de compra al proveedor)"
+                    />
+                </div>
+            )}
+            
+            <div className="flex gap-2 items-end mb-4 p-3 bg-white rounded border border-gray-200 shadow-sm">
                 <div className="flex-grow">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Insumo</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Agregar Insumo</label>
                     <select
                         value={selectedIngredientId}
                         onChange={e => setSelectedIngredientId(e.target.value)}
-                        className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm border p-2 focus:border-coffee-500 focus:ring-coffee-500"
+                        className="block w-full bg-white text-gray-900 rounded-md border-gray-300 border p-2 text-sm"
                     >
-                        <option value="" className="text-gray-400">-- Seleccionar Insumo --</option>
+                        <option value="" className="text-gray-400">-- Seleccionar --</option>
                         {availableIngredients.map(ing => (
                             <option key={ing.id} value={ing.id}>{ing.nombre} ({ing.unidad})</option>
                         ))}
                     </select>
                 </div>
                 <div className="w-24">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Cantidad</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Cant.</label>
                     <input 
                         type="number" 
                         value={amountRequired}
                         onChange={e => setAmountRequired(e.target.value)}
-                        className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm border p-2 focus:border-coffee-500 focus:ring-coffee-500"
+                        className="block w-full bg-white text-gray-900 rounded-md border-gray-300 border p-2 text-sm"
                         placeholder="0"
                     />
                 </div>
                 <button 
                     type="button"
                     onClick={handleAddIngredient}
-                    className="bg-coffee-600 text-white px-4 py-2 rounded-md hover:bg-coffee-700 transition-colors shadow-sm"
+                    className="bg-coffee-600 text-white px-3 py-2 rounded-md hover:bg-coffee-700 text-sm"
                 >
-                    Agregar
+                    +
                 </button>
             </div>
 
             {/* Recipe List */}
-            <div className="bg-white border rounded-md overflow-hidden">
-                {recipe.length === 0 ? (
-                    <p className="text-gray-400 text-sm p-4 text-center italic">No hay ingredientes agregados a la receta aún.</p>
-                ) : (
+            {recipe.length > 0 && (
+                <div className="bg-white border rounded-md overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-100">
                             <tr>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Insumo</th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
@@ -292,17 +327,17 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, onCancel }) 
                                         <button 
                                             type="button"
                                             onClick={() => removeIngredient(item.idInsumo)}
-                                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                                            className="text-red-600 hover:text-red-900 text-xs font-bold"
                                         >
-                                            Eliminar
+                                            X
                                         </button>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                )}
-            </div>
+                </div>
+            )}
         </div>
 
         {/* Actions */}

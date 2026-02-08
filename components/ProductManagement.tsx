@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Product } from '../types';
 
 interface ProductManagementProps {
@@ -21,6 +21,24 @@ const TAG_CONFIG: Record<string, { label: string; icon: string; color: string }>
 };
 
 const ProductManagement: React.FC<ProductManagementProps> = ({ products, onEdit, onDelete, onAddNew }) => {
+  const [filterCategory, setFilterCategory] = useState('Todos');
+
+  // 1. Extract Unique Categories
+  const categories = useMemo(() => {
+    const unique = new Set(products.map(p => p.category || 'General'));
+    // Convert Set to Array and Sort
+    const sorted = Array.from(unique).sort();
+    return ['Todos', ...sorted];
+  }, [products]);
+
+  // 2. Filter Logic
+  const filteredAdminProducts = useMemo(() => {
+    return products.filter(product => {
+      const cat = product.category || 'General';
+      return filterCategory === 'Todos' || cat === filterCategory;
+    });
+  }, [products, filterCategory]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -39,27 +57,46 @@ const ProductManagement: React.FC<ProductManagementProps> = ({ products, onEdit,
         </button>
       </div>
       
+      {/* Category Filters */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {categories.map(cat => (
+            <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border
+                ${filterCategory === cat 
+                    ? 'bg-coffee-600 text-white border-coffee-600 shadow-sm' 
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-coffee-50 hover:text-coffee-800'
+                }`}
+            >
+                {cat}
+            </button>
+        ))}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
                 <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Categoría</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Precio</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Receta</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-                {products.length === 0 ? (
+                {filteredAdminProducts.length === 0 ? (
                     <tr>
-                        <td colSpan={4} className="px-6 py-10 text-center text-gray-400">
-                            No hay productos registrados.
+                        <td colSpan={5} className="px-6 py-10 text-center text-gray-400">
+                            No hay productos en esta categoría.
                         </td>
                     </tr>
                 ) : (
-                    products.map((product) => (
+                    filteredAdminProducts.map((product) => (
                         <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                            {/* Product Info */}
                             <td className="px-6 py-3 whitespace-nowrap">
                                 <div className="flex items-center">
                                     <div className="flex-shrink-0 h-12 w-12">
@@ -89,14 +126,30 @@ const ProductManagement: React.FC<ProductManagementProps> = ({ products, onEdit,
                                     </div>
                                 </div>
                             </td>
+
+                            {/* Category Badge */}
+                            <td className="px-6 py-3 whitespace-nowrap">
+                                <span className="px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-md bg-gray-100 text-gray-600 border border-gray-200">
+                                    {product.category || 'General'}
+                                </span>
+                            </td>
+
+                            {/* Price */}
                             <td className="px-6 py-3 whitespace-nowrap">
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                     {formatCurrency(product.precio)}
                                 </span>
                             </td>
+
+                            {/* Recipe Info */}
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product.receta ? `${product.receta.length} ingredientes` : 'Sin receta'}
+                                {product.receta && product.receta.length > 0 
+                                    ? `${product.receta.length} ingredientes` 
+                                    : <span className="text-gray-400 italic">Sin receta (Re-venta)</span>
+                                }
                             </td>
+
+                            {/* Actions */}
                             <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                                 <button 
                                     onClick={() => onEdit(product)}

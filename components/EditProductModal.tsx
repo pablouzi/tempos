@@ -21,10 +21,13 @@ const DIETARY_OPTIONS = [
   { id: 'lactose_free', label: 'Sin Lactosa 🥛' }
 ];
 
+const SUGGESTED_CATEGORIES = ['Cafetería', 'Pastelería', 'Bebidas Frías', 'Sandwiches', 'Otros'];
+
 const EditProductModal: React.FC<EditProductModalProps> = ({ product, isOpen, onClose, onSuccess }) => {
   const [nombre, setNombre] = useState('');
   const [precio, setPrecio] = useState('');
   const [imagenUrl, setImagenUrl] = useState('');
+  const [category, setCategory] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [givesStamp, setGivesStamp] = useState(false);
@@ -43,6 +46,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, isOpen, on
       setNombre(product.nombre);
       setPrecio(product.precio.toString());
       setImagenUrl(product.imagen_url);
+      setCategory(product.category || 'Otros');
       setDescripcion(product.descripcion || '');
       setTags(product.tags || []);
       setGivesStamp(product.givesStamp || false);
@@ -124,6 +128,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, isOpen, on
             nombre,
             precio: parseFloat(precio),
             imagen_url: imagenUrl,
+            category: category,
             descripcion: descripcion.trim(),
             tags: tags,
             receta: cleanRecipe,
@@ -169,15 +174,29 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, isOpen, on
                             onChange={e => setNombre(e.target.value)}
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Precio (CLP)</label>
-                        <input 
-                            type="number" 
-                            step="10"
-                            className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 focus:ring-coffee-500 focus:border-coffee-500"
-                            value={precio}
-                            onChange={e => setPrecio(e.target.value)}
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Precio (CLP)</label>
+                            <input 
+                                type="number" 
+                                step="10"
+                                className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 focus:ring-coffee-500 focus:border-coffee-500"
+                                value={precio}
+                                onChange={e => setPrecio(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                            <input
+                                list="category-suggestions-edit"
+                                className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 focus:ring-coffee-500 focus:border-coffee-500"
+                                value={category}
+                                onChange={e => setCategory(e.target.value)}
+                            />
+                            <datalist id="category-suggestions-edit">
+                                {SUGGESTED_CATEGORIES.map(c => <option key={c} value={c} />)}
+                            </datalist>
+                        </div>
                     </div>
 
                     {/* Loyalty Checkbox */}

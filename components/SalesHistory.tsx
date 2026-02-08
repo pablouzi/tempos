@@ -18,9 +18,11 @@ interface MonthlyGroup {
 }
 
 const SalesHistory: React.FC = () => {
+  const [allSales, setAllSales] = useState<Sale[]>([]);
   const [groupedSales, setGroupedSales] = useState<MonthlyGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [filterMethod, setFilterMethod] = useState<string>('all');
   
   // Accordion State: Stores the keys of expanded months
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -30,7 +32,7 @@ const SalesHistory: React.FC = () => {
       setLoading(true);
       try {
         const data = await getSalesHistory();
-        processSalesData(data);
+        setAllSales(data);
       } catch (error: any) {
         console.error("Error fetching sales:", error);
         window.Swal.fire('Error', 'No se pudo cargar el historial de ventas', 'error');
@@ -42,9 +44,20 @@ const SalesHistory: React.FC = () => {
     fetchSales();
   }, []);
 
+  // React to filter changes
+  useEffect(() => {
+    if (allSales.length > 0 || !loading) {
+        const filtered = filterMethod === 'all' 
+            ? allSales 
+            : allSales.filter(s => s.paymentMethod === filterMethod);
+        
+        processSalesData(filtered);
+    }
+  }, [allSales, filterMethod]);
+
   // --- Data Processing Logic ---
   const processSalesData = (salesData: Sale[]) => {
-    // 1. Calculate Global Total
+    // 1. Calculate Global Total (Based on Filter)
     const total = salesData.reduce((acc, curr) => acc + curr.total, 0);
     setTotalRevenue(total);
 
@@ -111,8 +124,8 @@ const SalesHistory: React.FC = () => {
 
     setGroupedSales(result);
 
-    // Auto-expand the first month (most recent)
-    if (result.length > 0) {
+    // Auto-expand the first month (most recent) if strictly initialized
+    if (result.length > 0 && expandedMonths.size === 0) {
       setExpandedMonths(new Set([result[0].monthKey]));
     }
   };
@@ -138,21 +151,55 @@ const SalesHistory: React.FC = () => {
     return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderPaymentBadge = (method?: string) => {
+    switch(method) {
+        case 'efectivo':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">Efectivo 💵</span>;
+        case 'tarjeta':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">Tarjeta 💳</span>;
+        case 'otro':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">Otro ✨</span>;
+        default:
+            return <span className="text-gray-400">-</span>;
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold text-coffee-800">Historial Contable</h2>
+        <div>
+            <h2 className="text-2xl font-bold text-coffee-800">Historial Contable</h2>
+            <p className="text-sm text-gray-500">Registro detallado de transacciones.</p>
+        </div>
         
-        {/* Total Revenue Card */}
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-4">
-            <div className="bg-green-100 p-3 rounded-full text-green-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center w-full md:w-auto">
+            
+            {/* Payment Filter */}
+            <div className="w-full sm:w-48">
+                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Filtrar Pago</label>
+                <select 
+                    value={filterMethod}
+                    onChange={(e) => setFilterMethod(e.target.value)}
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-coffee-500 focus:border-coffee-500 sm:text-sm rounded-md border bg-white text-gray-900"
+                >
+                    <option value="all">Todos los Métodos</option>
+                    <option value="efectivo">Efectivo 💵</option>
+                    <option value="tarjeta">Tarjeta 💳</option>
+                    <option value="otro">Otro ✨</option>
+                </select>
             </div>
-            <div>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Acumulado Histórico</p>
-                <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalRevenue)}</p>
+
+            {/* Total Revenue Card */}
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3 min-w-[200px]">
+                <div className="bg-green-100 p-2 rounded-full text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Acumulado ({filterMethod === 'all' ? 'Total' : filterMethod})</p>
+                    <p className="text-xl font-bold text-gray-800">{formatCurrency(totalRevenue)}</p>
+                </div>
             </div>
         </div>
       </div>
@@ -167,7 +214,7 @@ const SalesHistory: React.FC = () => {
         </div>
       ) : groupedSales.length === 0 ? (
         <div className="bg-white rounded-lg p-10 text-center border border-gray-200">
-            <p className="text-gray-500">No hay registros de ventas.</p>
+            <p className="text-gray-500">No hay registros de ventas con este criterio.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -216,6 +263,7 @@ const SalesHistory: React.FC = () => {
                                                 <thead className="text-gray-400 border-b border-gray-100">
                                                     <tr>
                                                         <th className="px-4 py-2 text-left font-normal w-24">Hora</th>
+                                                        <th className="px-4 py-2 text-left font-normal w-32">Pago</th>
                                                         <th className="px-4 py-2 text-left font-normal">Detalle</th>
                                                         <th className="px-4 py-2 text-right font-normal w-32">Monto</th>
                                                     </tr>
@@ -225,6 +273,9 @@ const SalesHistory: React.FC = () => {
                                                         <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
                                                             <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                                                                 {formatTime(sale.fecha)}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                {renderPaymentBadge(sale.paymentMethod)}
                                                             </td>
                                                             <td className="px-4 py-3 text-gray-800">
                                                                 <div className="flex flex-wrap gap-2">

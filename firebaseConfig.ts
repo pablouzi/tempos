@@ -14,8 +14,11 @@ const firebaseConfig = {
   measurementId: "G-HYK99RRJ2Q"
 };
 
-// Access initializeApp from the namespace object and cast to any to avoid type errors
-// if the type definition is mismatching the installed version.
+// Initialize Firebase using modular function (matches index.html gstatic version)
+// Using (firebaseApp as any).initializeApp to bypass "Module has no exported member 'initializeApp'" error
+// which can occur due to version/type mismatches in some environments.
 const app = (firebaseApp as any).initializeApp(firebaseConfig);
+
+// Export services
 export const db = getFirestore(app);
 export const auth = getAuth(app);

@@ -4,6 +4,7 @@ import { getSalesHistory, getIngredients, getProducts, requestVoidSale, approveV
 
 interface SalesDashboardProps {
   userRole: 'admin' | 'cajero' | null;
+  currentUser: any; // Firebase user object
 }
 
 // Interfaces for Transaction Grouping
@@ -14,18 +15,14 @@ interface DailyGroup {
   timestamp: number;
 }
 
-interface MonthlyGroup {
-  monthKey: string;
-  total: number;
-  days: DailyGroup[];
-  timestamp: number;
-}
-
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole, currentUser }) => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [products, setProducts] = useState<Product[]>([]); 
   const [loading, setLoading] = useState(true);
+  
+  // Filter State
+  const [filterMethod, setFilterMethod] = useState<string>('all');
   
   // State for Transaction Accordions
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -54,46 +51,71 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
     fetchData();
   }, []);
 
+  // --- Filter Logic ---
+  const filteredSales = useMemo(() => {
+    if (filterMethod === 'all') return sales;
+    return sales.filter(s => s.paymentMethod === filterMethod);
+  }, [sales, filterMethod]);
+
+  const pendingVoidSales = useMemo(() => {
+    return sales.filter(s => s.status === 'pending_void');
+  }, [sales]);
+
   // --- Actions Logic ---
 
+  // Cashier Request OR Admin Direct Void (if selected via special flow, though Admin usually approves)
   const handleRequestVoid = async (sale: Sale) => {
-    const { value: text } = await window.Swal.fire({
+    // Determine action based on role
+    const isDirectVoid = userRole === 'admin';
+    const title = isDirectVoid ? 'Anular Venta Directamente' : 'Solicitar Anulación';
+    const text = isDirectVoid 
+       ? 'Esta acción anulará la venta y restaurará el stock inmediatamente.' 
+       : 'Se enviará una solicitud al administrador.';
+
+    const { value: reason } = await window.Swal.fire({
+      title: title,
+      text: text,
       input: 'textarea',
-      inputLabel: 'Motivo de anulación',
+      inputLabel: 'Motivo',
       inputPlaceholder: 'Ej: Error de digitación, cliente cambió de opinión...',
-      inputAttributes: {
-        'aria-label': 'Escribe el motivo de la anulación'
-      },
       showCancelButton: true,
-      confirmButtonText: 'Solicitar',
-      cancelButtonText: 'Cancelar'
+      confirmButtonText: isDirectVoid ? 'Anular Ahora' : 'Enviar Solicitud',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33'
     });
 
-    if (text) {
+    if (reason) {
       try {
-        await requestVoidSale(sale.id!, text);
-        window.Swal.fire('Solicitada', 'La anulación está pendiente de aprobación.', 'info');
+        if (isDirectVoid) {
+            // Admin Direct Void
+            await approveVoidSale(sale, currentUser.email, reason);
+            window.Swal.fire('Anulada', 'Venta anulada y stock restaurado.', 'success');
+        } else {
+            // Cashier Request
+            await requestVoidSale(sale.id!, reason, currentUser.email);
+            window.Swal.fire('Solicitada', 'Solicitud enviada al Administrador.', 'info');
+        }
         fetchData();
-      } catch (e) {
-        window.Swal.fire('Error', 'No se pudo procesar la solicitud', 'error');
+      } catch (e: any) {
+        window.Swal.fire('Error', 'No se pudo procesar: ' + e.message, 'error');
       }
     }
   };
 
   const handleApproveVoid = async (sale: Sale) => {
     const confirm = await window.Swal.fire({
-      title: '¿Confirmar Anulación?',
-      text: "Esto devolverá los ingredientes al stock y anulará la venta definitivamente.",
+      title: '¿Aprobar Anulación?',
+      html: `Motivo: <i>"${sale.voidReason}"</i><br/><br/>Esto devolverá los ingredientes al stock.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      confirmButtonText: 'Sí, Anular y Devolver Stock'
+      confirmButtonText: 'Sí, Aprobar'
     });
 
     if (confirm.isConfirmed) {
       try {
-        await approveVoidSale(sale);
-        window.Swal.fire('Anulada', 'Venta anulada y stock restaurado.', 'success');
+        await approveVoidSale(sale, currentUser.email);
+        window.Swal.fire('Aprobada', 'Venta anulada y stock restaurado.', 'success');
         fetchData();
       } catch (e: any) {
         window.Swal.fire('Error', 'Fallo al restaurar stock: ' + e.message, 'error');
@@ -103,7 +125,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
 
   const handleRejectVoid = async (sale: Sale) => {
     try {
-      await rejectVoidSale(sale.id!);
+      await rejectVoidSale(sale.id!, currentUser.email);
       window.Swal.fire('Rechazada', 'La venta vuelve a estado completado.', 'success');
       fetchData();
     } catch (e) {
@@ -112,21 +134,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
   };
 
   // --- KPI Calculations ---
-  // Only count completed sales for revenue
-  const validSales = sales.filter(s => s.status === 'completed');
+  // Only count completed sales for revenue, using FILTERED sales
+  const validSales = filteredSales.filter(s => s.status === 'completed');
   
   const totalRevenue = validSales.reduce((sum, s) => sum + s.total, 0);
   const totalTransactions = validSales.length;
   const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
   
-  // Only Admin sees Stock Alerts in full detail, but logic remains
+  // Stock Alerts
   const lowStockCount = ingredients.filter(i => {
     const min = i.stockMinimo || 5;
     return i.stock <= min;
   }).length;
 
   // --- ANALYTICS LOGIC (Memoized) ---
-
   const topProducts = useMemo(() => {
     const productCount: Record<string, number> = {};
     validSales.forEach(sale => {
@@ -142,7 +163,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
     
     const maxVal = sorted[0]?.count || 1;
     return sorted.map(p => ({ ...p, percent: (p.count / maxVal) * 100 }));
-  }, [sales]);
+  }, [validSales]);
 
   const leastSoldProducts = useMemo(() => {
     if (products.length === 0) return [];
@@ -161,19 +182,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
         .sort((a, b) => a[1] - b[1])
         .slice(0, 5) 
         .map(([name, count]) => ({ name, count }));
-  }, [sales, products]);
+  }, [validSales, products]);
 
   const hourlyActivity = useMemo(() => {
     const hours = new Array(24).fill(0); 
-    // Re-filter specifically for this chart to avoid closure staleness and ensure type safety
-    const chartSales = sales.filter(s => s.status === 'completed');
+    const chartSales = filteredSales.filter(s => s.status === 'completed');
 
     chartSales.forEach(sale => {
         if (!sale.fecha) return;
         
         let dateObj: Date;
         try {
-            // Handle Firestore Timestamp or JS Date or ISO String
             if (sale.fecha && typeof sale.fecha.toDate === 'function') {
                 dateObj = sale.fecha.toDate();
             } else {
@@ -183,14 +202,12 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
             return; 
         }
 
-        // Validate Date
         if (isNaN(dateObj.getTime())) return;
 
         const hour = dateObj.getHours();
         if (hour >= 0 && hour < 24) hours[hour]++;
     });
 
-    // Ensure maxActivity is at least 1 to prevent division by zero or NaN
     const maxActivity = Math.max(...hours, 1);
     
     return hours.map((count, hour) => ({
@@ -199,14 +216,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
         heightPercent: (count / maxActivity) * 100, 
         label: `${hour}:00`
     })); 
-  }, [sales]);
+  }, [filteredSales]);
 
-  // --- Grouping Logic (Includes ALL sales for history list) ---
+  // --- Grouping Logic ---
   const groupedTransactions = useMemo(() => {
     const monthsMap: Record<string, { total: number; daysMap: Record<string, DailyGroup>; timestamp: number }> = {};
 
-    sales.forEach(sale => {
-      // Robust Date Parsing for Grouping
+    filteredSales.forEach(sale => {
       let dateObj: Date;
       try {
         if (sale.fecha && typeof sale.fecha.toDate === 'function') {
@@ -215,12 +231,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
             dateObj = new Date(sale.fecha);
         }
       } catch {
-        // Fallback for corrupt dates
         dateObj = new Date();
       }
 
       if (isNaN(dateObj.getTime())) {
-          dateObj = new Date(); // Fallback
+          dateObj = new Date(); 
       }
 
       const monthKey = dateObj.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
@@ -269,7 +284,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
     }
 
     return result;
-  }, [sales]);
+  }, [filteredSales, expandedMonths.size]);
 
   // --- Render Helpers ---
 
@@ -305,9 +320,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
       case 'voided':
         return <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-bold border border-red-200">ANULADA</span>;
       case 'pending_void':
-        return <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-bold border border-orange-200 animate-pulse">PENDIENTE ANULACIÓN</span>;
-      default: // completed
+        return <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-bold border border-orange-200 animate-pulse">PENDIENTE</span>;
+      default: 
         return <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold border border-green-200">COMPLETADA</span>;
+    }
+  };
+
+  const renderPaymentBadge = (method?: string) => {
+    switch(method) {
+        case 'efectivo':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">Efectivo 💵</span>;
+        case 'tarjeta':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">Tarjeta 💳</span>;
+        case 'otro':
+            return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">Otro ✨</span>;
+        default:
+            return <span className="text-gray-400">-</span>;
     }
   };
 
@@ -315,28 +343,77 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8 animate-fade-in">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">
             {userRole === 'admin' ? 'Dashboard & Historial' : 'Historial de Caja'}
           </h2>
           <p className="text-gray-500">
-             {userRole === 'admin' ? 'Resumen general y analítica' : 'Mis ventas recientes'}
+             {userRole === 'admin' ? 'Resumen general y anulación de ventas' : 'Mis ventas recientes'}
           </p>
         </div>
-        <button 
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors text-sm font-medium"
-        >
-          {loading ? (
-             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          ) : (
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          )}
-          Actualizar
-        </button>
+        
+        <div className="flex gap-4 items-center w-full md:w-auto">
+             <div className="w-full md:w-48">
+                <select 
+                    value={filterMethod}
+                    onChange={(e) => setFilterMethod(e.target.value)}
+                    className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-coffee-500 focus:border-coffee-500 rounded-lg border shadow-sm bg-white text-gray-900"
+                >
+                    <option value="all">Todos los Pagos</option>
+                    <option value="efectivo">Efectivo 💵</option>
+                    <option value="tarjeta">Tarjeta 💳</option>
+                    <option value="otro">Otro ✨</option>
+                </select>
+            </div>
+
+            <button 
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors text-sm font-medium"
+            >
+            {loading ? (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            )}
+            <span className="hidden sm:inline">Actualizar</span>
+            </button>
+        </div>
       </div>
+
+      {/* ADMIN ALERTS: PENDING VOIDS */}
+      {userRole === 'admin' && pendingVoidSales.length > 0 && (
+          <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-md shadow-sm">
+              <h3 className="text-lg font-bold text-orange-800 mb-2">Solicitudes de Anulación Pendientes ({pendingVoidSales.length})</h3>
+              <div className="space-y-2">
+                  {pendingVoidSales.map(sale => (
+                      <div key={sale.id} className="flex justify-between items-center bg-white p-3 rounded border border-orange-200">
+                          <div>
+                              <span className="font-bold text-gray-800">{formatCurrency(sale.total)}</span>
+                              <span className="text-sm text-gray-500 mx-2">|</span>
+                              <span className="text-sm text-gray-600">{sale.voidRequestedBy || 'Desconocido'}</span>
+                              <p className="text-xs text-red-500 italic mt-1">Motivo: "{sale.voidReason}"</p>
+                          </div>
+                          <div className="flex gap-2">
+                              <button 
+                                  onClick={() => handleApproveVoid(sale)}
+                                  className="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-700"
+                              >
+                                  Aprobar & Anular
+                              </button>
+                              <button 
+                                  onClick={() => handleRejectVoid(sale)}
+                                  className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-bold hover:bg-gray-300"
+                              >
+                                  Rechazar
+                              </button>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      )}
 
       {/* ADMIN ONLY: FULL ANALYTICS */}
       {userRole === 'admin' && (
@@ -420,7 +497,6 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
                 <div className="flex-grow flex items-end gap-1 h-40">
                     {hourlyActivity.map((slot, idx) => (
                         <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                            {/* Tooltip on Hover */}
                             <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                                 <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-nowrap text-center">
                                     <div className="font-bold">{slot.count}</div>
@@ -428,14 +504,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
                                 </div>
                                 <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1"></div>
                             </div>
-
-                            {/* Bar */}
                             <div 
                                 className={`w-full max-w-[12px] rounded-t-sm transition-all duration-200 ${slot.count > 0 ? 'bg-coffee-600 opacity-90 group-hover:opacity-100' : 'bg-gray-100'}`} 
                                 style={{ height: `${slot.count > 0 ? Math.max(slot.heightPercent, 5) : 2}%` }}
                             ></div>
-                            
-                            {/* X-Axis Labels (every 4 hours) */}
                             {idx % 4 === 0 && (
                                 <div className="absolute top-full mt-1 text-[9px] text-gray-400 font-mono whitespace-nowrap">
                                     {idx}h
@@ -465,12 +537,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
       <div className="space-y-6">
         <h3 className="text-xl font-bold text-gray-800">
             {userRole === 'admin' ? 'Historial Completo' : 'Mis Ventas'}
+            <span className="ml-2 text-sm font-normal text-gray-400">({filterMethod === 'all' ? 'Todos los pagos' : filterMethod})</span>
         </h3>
         
         {loading ? (
              <div className="p-10 text-center text-gray-500">Cargando transacciones...</div>
         ) : groupedTransactions.length === 0 ? (
-             <div className="bg-white rounded-xl shadow-sm p-10 text-center text-gray-500 border border-gray-200">No hay transacciones registradas.</div>
+             <div className="bg-white rounded-xl shadow-sm p-10 text-center text-gray-500 border border-gray-200">No hay transacciones registradas con este criterio.</div>
         ) : (
              groupedTransactions.map((monthGroup) => {
                 const isMonthExpanded = expandedMonths.has(monthGroup.monthKey);
@@ -528,6 +601,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
                                                         <thead className="text-gray-400 bg-gray-100">
                                                             <tr>
                                                                 <th className="px-4 py-2 text-left font-normal w-24 text-xs">Hora</th>
+                                                                <th className="px-4 py-2 text-left font-normal w-24 text-xs">Pago</th>
                                                                 <th className="px-4 py-2 text-left font-normal text-xs">Estado</th>
                                                                 <th className="px-4 py-2 text-left font-normal text-xs">Detalle</th>
                                                                 <th className="px-4 py-2 text-right font-normal w-32 text-xs">Monto</th>
@@ -536,14 +610,17 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
                                                         </thead>
                                                         <tbody>
                                                             {dayGroup.sales.map((sale) => (
-                                                                <tr key={sale.id} className={`transition-colors border-t border-gray-50 ${sale.status==='pending_void' && userRole==='admin' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}>
+                                                                <tr key={sale.id} className={`transition-colors border-t border-gray-50 ${sale.status==='pending_void' ? 'bg-orange-50' : sale.status==='voided' ? 'bg-gray-50 opacity-60' : 'hover:bg-gray-50'}`}>
                                                                     <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                                                                         {formatTime(sale.fecha)}
                                                                     </td>
                                                                     <td className="px-4 py-3">
+                                                                        {renderPaymentBadge(sale.paymentMethod)}
+                                                                    </td>
+                                                                    <td className="px-4 py-3">
                                                                         {renderStatusBadge(sale)}
                                                                         {sale.voidReason && (
-                                                                            <p className="text-[10px] text-gray-500 italic mt-1 max-w-[120px] leading-tight">"{sale.voidReason}"</p>
+                                                                            <p className="text-[10px] text-gray-500 italic mt-1 max-w-[120px] leading-tight truncate" title={sale.voidReason}>"{sale.voidReason}"</p>
                                                                         )}
                                                                     </td>
                                                                     <td className="px-4 py-3 text-gray-800">
@@ -560,32 +637,20 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole }) => {
                                                                     </td>
                                                                     <td className="px-4 py-3 text-center">
                                                                         {/* ACTION BUTTONS LOGIC */}
-                                                                        {userRole === 'cajero' && sale.status === 'completed' && (
+                                                                        {sale.status === 'completed' && (
                                                                             <button 
                                                                                 onClick={() => handleRequestVoid(sale)}
-                                                                                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-red-50 hover:text-red-600 border border-gray-300"
+                                                                                className={`text-xs px-2 py-1 rounded border transition-colors ${userRole === 'admin' ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 border-gray-300'}`}
+                                                                                title={userRole === 'admin' ? 'Anular Directamente' : 'Solicitar Anulación'}
                                                                             >
-                                                                                Anular
+                                                                                {userRole === 'admin' ? 'Anular' : 'Solicitar'}
                                                                             </button>
                                                                         )}
-
-                                                                        {userRole === 'admin' && sale.status === 'pending_void' && (
-                                                                            <div className="flex justify-center gap-2">
-                                                                                <button 
-                                                                                    onClick={() => handleApproveVoid(sale)}
-                                                                                    className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 border border-red-300 font-bold"
-                                                                                    title="Confirmar Anulación"
-                                                                                >
-                                                                                    ✓
-                                                                                </button>
-                                                                                <button 
-                                                                                    onClick={() => handleRejectVoid(sale)}
-                                                                                    className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 border border-gray-300"
-                                                                                    title="Rechazar solicitud"
-                                                                                >
-                                                                                    ✕
-                                                                                </button>
-                                                                            </div>
+                                                                        {sale.status === 'pending_void' && (
+                                                                           <span className="text-xs text-orange-500 italic">Pendiente...</span>
+                                                                        )}
+                                                                        {sale.status === 'voided' && (
+                                                                            <span className="text-xs text-gray-400">-</span>
                                                                         )}
                                                                     </td>
                                                                 </tr>

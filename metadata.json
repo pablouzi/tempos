@@ -1,5 +1,7 @@
 {
   "name": "CoffeePOS",
   "description": "Una aplicación de punto de venta para una cafetería con gestión de inventario, deducción de stock basada en recetas y seguimiento de ventas mediante Firebase.\n",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

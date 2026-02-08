@@ -11,7 +11,8 @@ const AddInsumoModal: React.FC<AddInsumoModalProps> = ({ isOpen, onClose, onSucc
   const [nombre, setNombre] = useState('');
   const [unidad, setUnidad] = useState('gr');
   const [stock, setStock] = useState('');
-  const [stockMinimo, setStockMinimo] = useState('100'); // Default suggestion
+  const [stockMinimo, setStockMinimo] = useState('100');
+  const [costo, setCosto] = useState(''); // New State
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,18 +35,27 @@ const AddInsumoModal: React.FC<AddInsumoModalProps> = ({ isOpen, onClose, onSucc
       return;
     }
 
+    const costoNum = parseFloat(costo);
+    // Cost can be 0, but usually not negative
+    if (isNaN(costoNum) || costoNum < 0) {
+        window.Swal.fire('Error', 'El costo por unidad debe ser válido', 'error');
+        return;
+    }
+
     setIsSubmitting(true);
     try {
       await addInsumo({
         nombre,
         unidad,
         stock: stockNum,
-        stockMinimo: minStockNum
+        stockMinimo: minStockNum,
+        costoPorUnidad: costoNum
       });
       window.Swal.fire('Éxito', 'Insumo agregado correctamente', 'success');
       setNombre('');
       setStock('');
       setStockMinimo('100');
+      setCosto('');
       setUnidad('gr');
       onSuccess();
     } catch (e: any) {
@@ -86,19 +96,33 @@ const AddInsumoModal: React.FC<AddInsumoModalProps> = ({ isOpen, onClose, onSucc
                         />
                     </div>
                     
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Unidad de Medida</label>
-                        <select 
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-coffee-500 focus:border-coffee-500 bg-white"
-                            value={unidad}
-                            onChange={e => setUnidad(e.target.value)}
-                        >
-                            <option value="gr">Gramos (gr)</option>
-                            <option value="kg">Kilos (kg)</option>
-                            <option value="ml">Mililitros (ml)</option>
-                            <option value="l">Litros (l)</option>
-                            <option value="unid">Unidades (unid)</option>
-                        </select>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Unidad</label>
+                            <select 
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-coffee-500 focus:border-coffee-500 bg-white"
+                                value={unidad}
+                                onChange={e => setUnidad(e.target.value)}
+                            >
+                                <option value="gr">Gramos (gr)</option>
+                                <option value="kg">Kilos (kg)</option>
+                                <option value="ml">Mililitros (ml)</option>
+                                <option value="l">Litros (l)</option>
+                                <option value="unid">Unidades (unid)</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-blue-700">Costo por {unidad}</label>
+                            <input 
+                                type="number" 
+                                step="0.01"
+                                className="mt-1 block w-full border border-blue-200 bg-blue-50 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Ej: 15"
+                                value={costo}
+                                onChange={e => setCosto(e.target.value)}
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1">Costo de compra neto.</p>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

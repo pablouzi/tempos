@@ -8,24 +8,71 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Dynamic Theme Variables -->
+    <style>
+      :root {
+        /* Default Values (Light Mode) */
+        --primary-color: #8d6e63; /* Coffee 600 */
+        --primary-bg: #fdf8f6;    /* Coffee 50 */
+        --radius-global: 1.75rem; /* Rounded-xl */
+        --base-scale: 100%;       /* Font/Size Scale */
+      }
+
+      /* Premium Dark Mode Variables */
+      .dark {
+        --dark-bg: #0F0E0D;         /* Deep Charcoal */
+        --dark-surface: #1C1B1A;    /* Lighter Charcoal */
+        --dark-border: #2E2C2A;     /* Subtle Border */
+        --dark-text-main: #F5F5F0;  /* Cream White */
+        --dark-text-sec: #A3A398;   /* Warm Grey */
+        --dark-accent: #C18B4A;     /* Gold */
+      }
+
+      /* Compact Mode Modifier */
+      body.compact-mode {
+        --base-scale: 85% !important; /* Shrinks 1rem from 16px to ~13.6px */
+      }
+
+      /* Apply scaling to root so REM units adjust everywhere */
+      html {
+        font-size: var(--base-scale);
+      }
+    </style>
+
     <!-- Tailwind Config for Custom Colors -->
     <script>
       tailwind.config = {
+        darkMode: 'class', /* IMPORTANT: Manual toggling */
         theme: {
           extend: {
             colors: {
+              // Custom Premium Dark Palette
+              'dark-bg': 'var(--dark-bg)',
+              'dark-surface': 'var(--dark-surface)',
+              'dark-border': 'var(--dark-border)',
+              'dark-text-main': 'var(--dark-text-main)',
+              'dark-text-sec': 'var(--dark-text-sec)',
+              'dark-accent': 'var(--dark-accent)',
+              
+              // Map 'coffee' to our dynamic CSS variable
               coffee: {
-                50: '#fdf8f6',
+                50:  'var(--primary-bg)', 
                 100: '#f2e8e5',
                 200: '#eaddd7',
                 300: '#e0cec7',
                 400: '#d2bab0',
                 500: '#a1887f',
-                600: '#8d6e63',
+                600: 'var(--primary-color)', /* MAIN BRAND COLOR */
                 700: '#795548',
                 800: '#5d4037',
                 900: '#3e2723'
               }
+            },
+            borderRadius: {
+              'xl': 'var(--radius-global)',
+              'lg': 'calc(var(--radius-global) * 0.75)',
+              'md': 'calc(var(--radius-global) * 0.5)',
             },
             keyframes: {
               'fade-in': {
@@ -43,15 +90,19 @@
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react": "https://esm.sh/react@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/"
   }
 }
 </script>
 </head>
-  <body class="bg-gray-100 text-gray-800 antialiased">
+  <body class="bg-gray-100 dark:bg-dark-bg text-gray-800 dark:text-dark-text-main antialiased transition-colors duration-300">
     <div id="root"></div>
   </body>
 </html>

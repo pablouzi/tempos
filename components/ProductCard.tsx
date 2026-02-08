@@ -15,10 +15,10 @@ const formatCurrency = (amount: number) => {
 
 // Tag Configuration
 const TAG_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  'vegan': { label: 'Vegano', icon: '🌿', color: 'bg-green-100 text-green-800 border-green-200' },
-  'gluten_free': { label: 'Sin Gluten', icon: '🚫🌾', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  'sugar_free': { label: 'Sin Azúcar', icon: '🚫🍬', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  'lactose_free': { label: 'Sin Lactosa', icon: '🥛', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' }
+  'vegan': { label: 'Vegano', icon: '🌿', color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' },
+  'gluten_free': { label: 'Sin Gluten', icon: '🚫🌾', color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800' },
+  'sugar_free': { label: 'Sin Azúcar', icon: '🚫🍬', color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' },
+  'lactose_free': { label: 'Sin Lactosa', icon: '🥛', color: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800' }
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDelete, ingredientsMap }) => {
@@ -44,9 +44,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
   return (
     <div 
       onClick={() => onAdd(product, 1)}
-      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer border border-gray-100 flex flex-col h-full transform hover:scale-[1.02] duration-200 group relative"
+      className="bg-white dark:bg-dark-surface rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer border border-gray-100 dark:border-dark-border flex flex-col h-full transform hover:scale-[1.02] duration-200 group relative"
     >
-      <div className="h-40 w-full overflow-hidden bg-gray-200 relative">
+      <div className="h-40 w-full overflow-hidden bg-gray-200 dark:bg-[#252423] relative">
         <img 
           src={product.imagen_url} 
           alt={product.nombre} 
@@ -59,7 +59,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
             {onEdit && (
                 <button 
                     onClick={handleEditClick}
-                    className="bg-white text-yellow-600 p-1.5 rounded-full shadow hover:bg-yellow-50"
+                    className="bg-white dark:bg-dark-surface text-yellow-600 dark:text-yellow-400 p-1.5 rounded-full shadow hover:bg-yellow-50 dark:hover:bg-gray-700"
                     title="Editar"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
             {onDelete && (
                 <button 
                     onClick={handleDeleteClick}
-                    className="bg-white text-red-600 p-1.5 rounded-full shadow hover:bg-red-50"
+                    className="bg-white dark:bg-dark-surface text-red-600 dark:text-red-400 p-1.5 rounded-full shadow hover:bg-red-50 dark:hover:bg-gray-700"
                     title="Eliminar"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,13 +80,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
             )}
         </div>
 
-        <div className="absolute bottom-0 right-0 bg-coffee-600 text-white px-3 py-1 rounded-tl-lg font-bold shadow-sm z-10">
+        <div className="absolute bottom-0 right-0 bg-coffee-600 dark:bg-dark-accent text-white px-3 py-1 rounded-tl-lg font-bold shadow-sm z-10">
           {formatCurrency(product.precio)}
         </div>
       </div>
       
       <div className="p-4 flex-grow flex flex-col">
-        <h3 className="text-lg font-bold text-gray-800 leading-tight mb-1 group-hover:text-coffee-700 transition-colors">{product.nombre}</h3>
+        <h3 className="text-lg font-bold text-gray-800 dark:text-dark-text-main leading-tight mb-1 group-hover:text-coffee-700 dark:group-hover:text-dark-accent transition-colors">{product.nombre}</h3>
         
         {/* Badges / Tags */}
         {product.tags && product.tags.length > 0 && (
@@ -95,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
                     const config = TAG_CONFIG[tagKey];
                     if (!config) return null;
                     return (
-                        <span key={tagKey} className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${config.color}`}>
+                        <span key={tagKey} className={`inline-flex items-center px-2 py-0.5 rounded-2xl text-[10px] font-bold border uppercase tracking-wider ${config.color}`}>
                             <span className="mr-1 text-xs">{config.icon}</span>
                             {config.label}
                         </span>
@@ -106,22 +106,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd, onEdit, onDel
 
         {/* Description */}
         {product.descripcion && (
-            <p className="text-xs text-gray-500 line-clamp-2 mb-1 leading-relaxed">
+            <p className="text-xs text-gray-500 dark:text-dark-text-sec line-clamp-2 mb-1 leading-relaxed">
                 {product.descripcion}
             </p>
         )}
 
         {/* Ingredients List */}
         {ingredientNames && (
-           <p className="text-[10px] text-gray-400 mt-1 italic leading-snug border-t border-gray-100 pt-1">
-             <span className="font-semibold text-gray-500">Ingredientes:</span> {ingredientNames}
+           <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 italic leading-snug border-t border-gray-100 dark:border-dark-border pt-1">
+             <span className="font-semibold text-gray-500 dark:text-gray-400">Ingredientes:</span> {ingredientNames}
            </p>
         )}
         
         <div className="mt-auto pt-4">
           <button 
             onClick={handleAddToCart}
-            className="w-full bg-coffee-100 text-coffee-800 text-sm font-bold py-2 rounded hover:bg-coffee-200 hover:text-coffee-900 transition-colors border border-coffee-200"
+            className="w-full bg-coffee-100 dark:bg-dark-border text-coffee-800 dark:text-dark-text-main text-sm font-bold py-2 rounded-2xl hover:bg-coffee-200 dark:hover:bg-dark-accent hover:text-coffee-900 dark:hover:text-white transition-colors border border-coffee-200 dark:border-dark-border"
           >
             Agregar
           </button>
