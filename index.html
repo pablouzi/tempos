@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CaféPOS</title>
+    <title>Steamcup POS</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 -->
@@ -11,77 +11,88 @@
     
     <!-- Dynamic Theme Variables -->
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+
       :root {
-        /* Default Values (Light Mode) */
-        --primary-color: #8d6e63; /* Coffee 600 */
-        --primary-bg: #fdf8f6;    /* Coffee 50 */
-        --radius-global: 1.75rem; /* Rounded-xl */
-        --base-scale: 100%;       /* Font/Size Scale */
+        /* Reference Image Palette */
+        --primary-color: #C8553D; /* Rust/Terracotta Orange */
+        --sidebar-bg: #3D2B24;    /* Dark Coffee/Black - Updated */
+        --main-bg: #F7F1E9;       /* Light Beige - Updated */
+        --cart-bg: #EBE3D5;       /* Darker Beige - Updated */
+        --text-dark: #2D2424;
+        --radius-global: 1.2rem; 
+        --base-scale: 100%;
+        --card-bg: #FFFFFF;      /* Fondo personalizado de la tarjeta (Capa 1) */
+      }
+    .dark {
+       --main-bg: #312312;      /* Fondo casi negro */
+       --sidebar-bg: #201713;   /* Sidebar más oscuro */
+       --text-dark: #F7F1E9;    /* Texto claro */
+       --cart-bg: #201713;      /* Carrito gris oscuro */
+       --card-bg: #201713;      /* Tarjeta ligeramente más clara para dar relieve */
+      }
+      body {
+        font-family: 'Montserrat', sans-serif;
+        background-color: var(--main-bg);
+        color: var(--text-dark);
+    transition: background-color 0.3s ease; /* Para que el cambio sea suave */
       }
 
-      /* Premium Dark Mode Variables */
-      .dark {
-        --dark-bg: #0F0E0D;         /* Deep Charcoal */
-        --dark-surface: #1C1B1A;    /* Lighter Charcoal */
-        --dark-border: #2E2C2A;     /* Subtle Border */
-        --dark-text-main: #F5F5F0;  /* Cream White */
-        --dark-text-sec: #A3A398;   /* Warm Grey */
-        --dark-accent: #C18B4A;     /* Gold */
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
       }
-
-      /* Compact Mode Modifier */
-      body.compact-mode {
-        --base-scale: 85% !important; /* Shrinks 1rem from 16px to ~13.6px */
+      ::-webkit-scrollbar-track {
+        background: transparent;
       }
-
-      /* Apply scaling to root so REM units adjust everywhere */
-      html {
-        font-size: var(--base-scale);
+      ::-webkit-scrollbar-thumb {
+        background: #D1D5DB;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #9CA3AF;
       }
     </style>
 
     <!-- Tailwind Config for Custom Colors -->
     <script>
       tailwind.config = {
-        darkMode: 'class', /* IMPORTANT: Manual toggling */
+        darkMode: 'class', 
         theme: {
           extend: {
+            fontFamily: {sans: ['Montserrat', 'sans-serif'],},
             colors: {
-              // Custom Premium Dark Palette
-              'dark-bg': 'var(--dark-bg)',
-              'dark-surface': 'var(--dark-surface)',
-              'dark-border': 'var(--dark-border)',
-              'dark-text-main': 'var(--dark-text-main)',
-              'dark-text-sec': 'var(--dark-text-sec)',
-              'dark-accent': 'var(--dark-accent)',
-              
-              // Map 'coffee' to our dynamic CSS variable
+              brand: {
+                      // Ahora Tailwind leerá lo que tu configurador ponga en el :root
+                      dark: 'var(--sidebar-bg)',    /* Antes: '#3D2B24' */
+                      orange: 'var(--primary-color)', /* Antes: '#C8553D' */
+                      beige: 'var(--main-bg)',      /* Antes: '#F7F1E9' */
+                      cart: 'var(--cart-bg)',       /* Antes: '#EBE3D5' */
+                      text: 'var(--text-dark)',     /* Antes: '#1F1F1F' */
+                      gray: '#9CA3AF',
+                      },
               coffee: {
-                50:  'var(--primary-bg)', 
+                50:  '#faf7f5', 
                 100: '#f2e8e5',
                 200: '#eaddd7',
                 300: '#e0cec7',
                 400: '#d2bab0',
                 500: '#a1887f',
-                600: 'var(--primary-color)', /* MAIN BRAND COLOR */
+                600: '#C4562F',
                 700: '#795548',
                 800: '#5d4037',
                 900: '#3e2723'
               }
             },
             borderRadius: {
-              'xl': 'var(--radius-global)',
-              'lg': 'calc(var(--radius-global) * 0.75)',
-              'md': 'calc(var(--radius-global) * 0.5)',
+              'xl': '1rem',
+              '2xl': '1.5rem',
+              '3xl': '2rem',
             },
-            keyframes: {
-              'fade-in': {
-                '0%': { opacity: '0', transform: 'translateY(-10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' }
-              }
-            },
-            animation: {
-              'fade-in': 'fade-in 0.3s ease-out forwards'
+            boxShadow: {
+              'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+              'card': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
             }
           }
         }
@@ -97,13 +108,14 @@
     "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
     "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js",
     "firebase/auth": "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/"
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1?external=react,react-dom"
   }
 }
 </script>
 </head>
-  <body class="bg-gray-100 dark:bg-dark-bg text-gray-800 dark:text-dark-text-main antialiased transition-colors duration-300">
-    <div id="root"></div>
+  <body class="bg-brand-beige text-brand-text antialiased transition-colors duration-300 h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

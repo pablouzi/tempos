@@ -8,6 +8,7 @@ interface ThemeSettings {
   isCompact: boolean;
   posColumns: number;      // Grid density (4, 5, or 6)
   isDarkMode: boolean;     // New: Dark Mode State
+  cardBackgroundColor: string;
 }
 
 interface ThemeContextType {
@@ -20,11 +21,12 @@ interface ThemeContextType {
 const defaultSettings: ThemeSettings = {
   primaryColor: '#8d6e63',
   backgroundColor: '#fdf8f6',
-  borderRadius: '0.75rem',
+  borderRadius: '1.75rem',
   baseFontSize: 100,
   isCompact: false,
-  posColumns: 4,
-  isDarkMode: false
+  posColumns: 5,
+  isDarkMode: false,
+  cardBackgroundColor: '#FFFFFF', // Fondo tarjeta independiente
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -43,9 +45,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 1. Dark Mode Injection
     if (settings.isDarkMode) {
-      root.classList.add('dark');
+      document.documentElement.classList.add('dark');
     } else {
-      root.classList.remove('dark');
+      document.documentElement.classList.remove('dark');
     }
 
     // 2. Apply Colors
@@ -53,7 +55,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // In dark mode, we ignore the light background variable and let Tailwind handle it via dark: classes,
     // or we could swap it here. For this implementation, we use Tailwind utility classes.
     root.style.setProperty('--primary-bg', settings.backgroundColor);
-
+    root.style.setProperty('--card-bg', settings.cardBackgroundColor); // Nueva conexión
     // 3. Apply Radius
     root.style.setProperty('--radius-global', settings.borderRadius);
 
@@ -86,6 +88,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           primaryColor: '#7c3aed', // Violet 600
           backgroundColor: '#f5f3ff', // Violet 50
           borderRadius: '1rem', // Very rounded
+          posColumns: 5, // Forzamos 5 columnas para el look Dopamia
           isDarkMode: false
         });
         break;
@@ -95,6 +98,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           primaryColor: '#3b82f6', // Blue 500 for contrast
           backgroundColor: '#111827', // Gray 900
           borderRadius: '0.5rem', 
+          posColumns: 5, // 5 columnas para el look Clásico
           isDarkMode: true
         });
         break;

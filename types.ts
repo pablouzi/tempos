@@ -32,6 +32,16 @@ export interface CartItem extends Product {
   originalPrice?: number; // To restore price if un-redeemed
 }
 
+// New Interface for Pending Orders (Fiados/Pendientes)
+export interface PendingOrder {
+  id: string;
+  customer?: Customer | null;
+  items: CartItem[];
+  total: number;
+  timestamp: string; // ISO String for storage compatibility
+  status: 'pending';
+}
+
 export type SaleStatus = 'completed' | 'pending_void' | 'voided';
 
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'otro';

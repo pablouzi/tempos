@@ -12,37 +12,32 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ products, selectedCategory, o
   const categories = useMemo(() => {
     const unique = new Set(products.map(p => p.category?.trim()).filter(Boolean));
     const sortedCats = Array.from(unique).sort();
-    
-    // Inject "Todos" and "Más Vendidos" at the start
     return ['Todos', '⭐ Más Vendidos', ...sortedCats];
   }, [products]);
 
-  // If we only have "Todos" and "Más Vendidos" and no real categories, maybe minimal UI, 
-  // but usually we want to show them.
-  
   return (
     <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
-      <div className="flex space-x-2">
+      <div className="flex space-x-3">
         {categories.map((cat: any) => {
             const isActive = selectedCategory === cat;
-            // Visual tweak for "Más Vendidos"
-            const isSpecial = cat === '⭐ Más Vendidos';
+            
+            // Reference Style: 
+            // Inactive: White pill, grey text.
+            // Active: Black/Dark Brown pill, white text.
             
             return (
                 <button
                     key={cat}
                     onClick={() => onSelectCategory(cat)}
                     className={`
-                        px-5 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 transform active:scale-95 shadow-sm
+                        px-6 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-200 transform active:scale-95 border
                         ${isActive 
-                            ? 'bg-coffee-600 dark:bg-dark-accent text-white shadow-md ring-2 ring-coffee-300 dark:ring-0 ring-offset-1 dark:shadow-[0_0_15px_rgba(193,139,74,0.3)]' 
-                            : isSpecial 
-                                ? 'bg-yellow-50 dark:bg-dark-surface text-yellow-800 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-900/50 hover:bg-yellow-100 dark:hover:bg-dark-border'
-                                : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text-sec border border-gray-200 dark:border-dark-border hover:bg-coffee-50 dark:hover:bg-dark-border hover:text-coffee-800 dark:hover:text-dark-text-main'
+                            ? 'bg-brand-dark text-white border-brand-dark shadow-md' 
+                            : 'bg-white text-gray-500 border-white hover:border-gray-200 hover:text-gray-700 shadow-sm'
                         }
                     `}
                 >
-                    {cat === 'Todos' ? '☕ Todos' : cat}
+                    {cat === 'Todos' ? 'All' : cat}
                 </button>
             );
         })}
