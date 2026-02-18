@@ -1,10 +1,11 @@
+import { GoogleGenerativeAI } from "@google/generative-ai"; // <-- ESTA ES LA CLAVE
 // Borra esto después de arreglarlo
 console.log("¿La llave existe?:", !!import.meta.env.VITE_API_KEY);
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sale, Customer } from '../types';
 import { getSalesByDateRange, getCustomers } from '../services/firebaseService';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { GoogleGenAI } from "@google/genai";
+//import { GoogleGenAI } from "@google/genai";
 import { Brain, Sparkles, Loader, Send, Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-react';
 
 // 1. HELPERS
@@ -160,6 +161,7 @@ const DailySalesReport: React.FC = () => {
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
       const prompt = `
       Actúa como consultor senior de negocios para la cafetería "Libre Coffee". 
         Analiza los datos de hoy en Concepción:
