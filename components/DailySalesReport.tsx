@@ -172,7 +172,7 @@ const testModelNames = async () => {
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
       const prompt = `
         Actúa como consultor senior para "Libre Coffee". Analiza los datos de hoy en Concepción:
@@ -216,7 +216,7 @@ const testModelNames = async () => {
       }));
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
       const prompt = `Eres analista de Libre Coffee. Datos: ${JSON.stringify(leanSales)}. Pregunta: "${userQuery}". Responde breve y directo.`;
 
