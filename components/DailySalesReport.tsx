@@ -143,7 +143,7 @@ const DailySalesReport: React.FC = () => {
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
       const prompt = `
         Actúa como consultor senior para "Libre Coffee". Analiza los datos de hoy en Concepción:
@@ -187,7 +187,7 @@ const DailySalesReport: React.FC = () => {
       }));
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
       const prompt = `Eres analista de Libre Coffee. Datos: ${JSON.stringify(leanSales)}. Pregunta: "${userQuery}". Responde breve y directo.`;
 
