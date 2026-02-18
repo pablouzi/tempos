@@ -1,0 +1,5 @@
+- name: Install and Build
+        run: npm ci && npm run build
+        env:
+          # Debe estar alineado exactamente con 'run' o con 'name' según tu estructura
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
