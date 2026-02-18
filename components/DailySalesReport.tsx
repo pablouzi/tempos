@@ -149,7 +149,8 @@ const DailySalesReport: React.FC = () => {
 
   // 3. ANÁLISIS IA (Standard Report)
   const analyzeWithIA = async () => {
-    if (!process.env.API_KEY) {
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
       setAiResponse("⚠️ API Key no configurada.");
       return;
     }
@@ -158,7 +159,7 @@ const DailySalesReport: React.FC = () => {
     setAiResponse(""); 
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const genAI = new GoogleGenerativeAI(apiKey);
       const prompt = `
       Actúa como consultor senior de negocios para la cafetería "Libre Coffee". 
         Analiza los datos de hoy en Concepción:
