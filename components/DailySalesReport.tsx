@@ -1,3 +1,5 @@
+// Borra esto después de arreglarlo
+console.log("¿La llave existe?:", !!import.meta.env.VITE_API_KEY);
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sale, Customer } from '../types';
 import { getSalesByDateRange, getCustomers } from '../services/firebaseService';
