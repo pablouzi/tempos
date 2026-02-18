@@ -129,7 +129,30 @@ const DailySalesReport: React.FC = () => {
     const c = customers.find(cust => cust.id === id);
     return c ? c.name : 'Anónimo';
   };
+const testModelNames = async () => {
+  const apiKey = import.meta.env.VITE_API_KEY;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Los sospechosos habituales en 2026
+  const modelsToTest = [
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash",
+    "gemini-3-flash-preview"
+  ];
 
+  console.log("🔍 Iniciando escaneo de modelos para Libre Coffee...");
+
+  for (const modelName of modelsToTest) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      // Hacemos una prueba ultra rápida de "Hola"
+      await model.generateContent("ping");
+      console.log(`✅ ¡ÉXITO! El modelo "${modelName}" está activo y responde.`);
+    } catch (e) {
+      console.log(`❌ El modelo "${modelName}" no está disponible (404 o error).`);
+    }
+  }
+};
   // 3. ANÁLISIS IA (Standard Report)
   const analyzeWithIA = async () => {
     const apiKey = import.meta.env.VITE_API_KEY;
