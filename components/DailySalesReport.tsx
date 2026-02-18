@@ -403,6 +403,7 @@ const DailySalesReport: React.FC = () => {
               ))}
             </tbody>
           </table>
+        {!loading && processed.daySales.length === 0 && <div className="p-16 text-center text-gray-300 font-bold uppercase text-xs">Sin ventas este día</div>}
       </div>
     </div>
   );
