@@ -20,13 +20,7 @@ const DailySalesReport: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-// 2. PEGA AQUÍ LA PRUEBA DE MODELOS 🚀
-  useEffect(() => {
-    // Solo ejecutamos si la llave existe (que ya vimos que da 'true')
-    if (import.meta.env.VITE_API_KEY) {
-      testModelNames(); 
-    }
-  }, []); // El [] vacío asegura que solo corra UNA VEZ al cargar
+
   // Estados para IA
   const [aiResponse, setAiResponse] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
@@ -135,30 +129,6 @@ const DailySalesReport: React.FC = () => {
     const c = customers.find(cust => cust.id === id);
     return c ? c.name : 'Anónimo';
   };
-const testModelNames = async () => {
-  const apiKey = import.meta.env.VITE_API_KEY;
-  const genAI = new GoogleGenerativeAI(apiKey);
-  
-  // Los sospechosos habituales en 2026
-  const modelsToTest = [
-    "gemini-1.5-flash-latest",
-    "gemini-2.0-flash",
-    "gemini-3-flash-preview"
-  ];
-
-  console.log("🔍 Iniciando escaneo de modelos para Libre Coffee...");
-
-  for (const modelName of modelsToTest) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      // Hacemos una prueba ultra rápida de "Hola"
-      await model.generateContent("ping");
-      console.log(`✅ ¡ÉXITO! El modelo "${modelName}" está activo y responde.`);
-    } catch (e) {
-      console.log(`❌ El modelo "${modelName}" no está disponible (404 o error).`);
-    }
-  }
-};
   // 3. ANÁLISIS IA (Standard Report)
   const analyzeWithIA = async () => {
     const apiKey = import.meta.env.VITE_API_KEY;
@@ -235,13 +205,27 @@ const testModelNames = async () => {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 animate-fade-in font-Montserrat">
       {/* HEADER */}
+    {/* HEADER Y SELECTOR DE FECHA */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Reporte de Inteligencia</h2>
-          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Auditoría Libre Coffee</p>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Auditoría y análisis de flujo diario</p>
         </div>
-        <div className="relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="font-black text-blue-700 outline-none" />
+        
+        <div className="relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer">
+          <div className="flex items-center gap-3 pointer-events-none">
+            <span className="text-xl">📅</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha Auditoría</span>
+              <span className="text-blue-700 font-black text-sm">{selectedDate.split('-').reverse().join(' / ')}</span>
+            </div>
+          </div>
+          <input 
+            type="date" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
         </div>
       </div>
 
@@ -266,18 +250,43 @@ const testModelNames = async () => {
         </button>
       </div>
 
-      {/* DASHBOARD CARDS */}
+{/* TARJETAS DE TOTALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-[35px] shadow-sm border-l-8 border-[#d37342]">
-          <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total del Día</p>
-          <h3 className="text-4xl font-black text-gray-800">{formatCurrency(processed.totalDia)}</h3>
+        <div className="bg-white p-8 rounded-[35px] shadow-sm border-l-8 border-brand-orange flex justify-between items-center">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total del Día</p>
+            <h3 className="text-4xl font-black text-gray-800">{formatCurrency(processed.totalDia)}</h3>
+          </div>
+          <div className="text-4xl">💰</div>
         </div>
-        <div className="bg-[#1a2332] p-8 rounded-[35px] shadow-xl border-l-8 border-green-400">
-          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Total Mes</p>
-          <h3 className="text-4xl font-black text-white">{formatCurrency(processed.totalMes)}</h3>
+        <div className="bg-[#1a2332] p-8 rounded-[35px] shadow-xl border-l-8 border-green-400 flex justify-between items-center">
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Acumulado Mes</p>
+            <h3 className="text-4xl font-black text-white">{formatCurrency(processed.totalMes)}</h3>
+          </div>
+          <div className="text-4xl">📈</div>
         </div>
       </div>
-
+ {/* KPIs Y SMART INSIGHTS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+          <p className="text-[10px] font-black text-gray-400 uppercase">Efectivo Hoy</p>
+          <h3 className="text-xl font-bold text-green-600">{formatCurrency(processed.dayTotals.cash)}</h3>
+        </div>
+        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+          <p className="text-[10px] font-black text-gray-400 uppercase">Tarjeta Hoy</p>
+          <h3 className="text-xl font-bold text-blue-600">{formatCurrency(processed.dayTotals.card)}</h3>
+        </div>
+        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+          <p className="text-[10px] font-black text-gray-400 uppercase">Ticket Prom.</p>
+          <h3 className="text-xl font-bold text-gray-800">{formatCurrency(processed.ticket)}</h3>
+        </div>
+        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+          <p className="text-[10px] font-black text-gray-400 uppercase">Hora Peak / Clima</p>
+          <h3 className="text-xl font-bold text-gray-800">{processed.peak}</h3>
+          <span className="text-[10px] text-blue-400 font-bold uppercase">{processed.weather.condition} ({processed.weather.temp}°C)</span>
+        </div>
+      </div>
       {/* GRÁFICO */}
       <div className="bg-white p-8 rounded-[35px] shadow-sm border border-gray-50">
         <h4 className="font-black text-gray-700 text-[11px] uppercase mb-6 tracking-widest">Ritmo de Ventas 🕒</h4>
@@ -293,23 +302,107 @@ const testModelNames = async () => {
           </ResponsiveContainer>
         </div>
       </div>
+ {/* SECCIÓN ACORDEONES: TOP 10 MEJORES Y PEORES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Top 10 Mejores */}
+          <div className="bg-white rounded-[35px] shadow-sm border border-gray-50 overflow-hidden">
+              <button 
+                onClick={() => setShowTop10(!showTop10)}
+                className="w-full px-8 py-6 flex justify-between items-center bg-green-50/50 hover:bg-green-50 transition-colors"
+              >
+                  <div className="flex items-center gap-3">
+                      <div className="bg-green-100 p-2 rounded-full text-green-600">
+                          <TrendingUp size={20} />
+                      </div>
+                      <h4 className="font-black text-gray-700 text-sm uppercase tracking-widest">Top 10 Mejores Ventas</h4>
+                  </div>
+                  <div className="text-gray-400">
+                      {showTop10 ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+              </button>
+              
+              {showTop10 && (
+                  <div className="px-8 pb-8 pt-2 animate-fade-in">
+                      <div className="space-y-3">
+                        {processed.top10.length === 0 ? (
+                            <div className="text-center py-4 text-gray-400 text-xs">Sin datos hoy.</div>
+                        ) : (
+                            processed.top10.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-xs font-black w-5 h-5 flex items-center justify-center rounded-full ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                                            {idx + 1}
+                                        </span>
+                                        <span className="text-sm font-medium text-gray-700">{item.nombre}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">{item.cantidad} un.</span>
+                                </div>
+                            ))
+                        )}
+                      </div>
+                  </div>
+              )}
+          </div>
 
+          {/* Top 10 Peores */}
+          <div className="bg-white rounded-[35px] shadow-sm border border-gray-50 overflow-hidden">
+              <button 
+                onClick={() => setShowBottom10(!showBottom10)}
+                className="w-full px-8 py-6 flex justify-between items-center bg-red-50/30 hover:bg-red-50/50 transition-colors"
+              >
+                  <div className="flex items-center gap-3">
+                      <div className="bg-red-100 p-2 rounded-full text-red-500">
+                          <TrendingDown size={20} />
+                      </div>
+                      <h4 className="font-black text-gray-700 text-sm uppercase tracking-widest">Top 10 Menos Vendidos</h4>
+                  </div>
+                  <div className="text-gray-400">
+                      {showBottom10 ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+              </button>
+              
+              {showBottom10 && (
+                  <div className="px-8 pb-8 pt-2 animate-fade-in">
+                      <div className="space-y-3">
+                        {processed.bottom10.length === 0 ? (
+                            <div className="text-center py-4 text-gray-400 text-xs">Sin datos hoy.</div>
+                        ) : (
+                            processed.bottom10.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-black w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                                            {idx + 1}
+                                        </span>
+                                        <span className="text-sm font-medium text-gray-600">{item.nombre}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">{item.cantidad} un.</span>
+                                </div>
+                            ))
+                        )}
+                      </div>
+                  </div>
+              )}
+          </div>
+
+      </div>
       {/* TABLA DETALLE */}
       <div className="bg-white rounded-[35px] shadow-sm border border-gray-100 overflow-hidden">
         <table className="min-w-full text-sm text-left">
-          <thead className="text-gray-400 bg-gray-50 border-b border-gray-100 uppercase text-[10px] font-black">
-            <tr><th className="px-8 py-4">Hora</th><th className="px-8 py-4">Cliente</th><th className="px-8 py-4 text-right">Total</th></tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 text-gray-600">
-            {processed.daySales.map((s) => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-8 py-4 font-mono text-[11px]">{formatTime(s.fecha)}</td>
-                <td className="px-8 py-4 font-bold text-gray-800">{getCustomerName(s.customerId)}</td>
-                <td className="px-8 py-4 text-right font-black text-gray-800">{formatCurrency(s.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <thead className="text-gray-400 bg-white border-b border-gray-100 uppercase text-[10px] font-black">
+              <tr><th className="px-8 py-4">Hora</th><th className="px-8 py-4">Cliente</th><th className="px-8 py-4">Método</th><th className="px-8 py-4 text-right">Total</th></tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-gray-600">
+              {processed.daySales.map((s) => (
+                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-8 py-4 font-mono text-[11px]">{formatTime(s.fecha)}</td>
+                  <td className="px-8 py-4 font-bold text-gray-800">{getCustomerName(s.customerId)}</td>
+                  <td className="px-8 py-4"><span className="text-[9px] font-black uppercase text-gray-400 border px-2 py-0.5 rounded-full">{s.items.map(i => i.nombre)}</span></td>
+                  <td className="px-8 py-4 text-right font-black text-gray-800">{formatCurrency(s.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
       </div>
     </div>
   );
