@@ -20,7 +20,13 @@ const DailySalesReport: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-
+// 2. PEGA AQUÍ LA PRUEBA DE MODELOS 🚀
+  useEffect(() => {
+    // Solo ejecutamos si la llave existe (que ya vimos que da 'true')
+    if (import.meta.env.VITE_API_KEY) {
+      testModelNames(); 
+    }
+  }, []); // El [] vacío asegura que solo corra UNA VEZ al cargar
   // Estados para IA
   const [aiResponse, setAiResponse] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
