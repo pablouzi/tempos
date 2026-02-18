@@ -75,11 +75,13 @@ const PendingOrdersModal: React.FC<PendingOrdersModalProps> = ({ isOpen, orders,
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {order.items.length} items • <span className="font-mono text-xs">{order.id.slice(0, 8)}</span>
+                                    {order.items.reduce((acc, i) => acc + i.quantity, 0)} items • <span className="font-mono text-xs">{order.id.slice(0, 8)}</span>
                                 </p>
                                 <div className="mt-2 text-xs text-gray-400 flex flex-wrap gap-1">
                                     {order.items.slice(0, 3).map((i, idx) => (
-                                        <span key={idx} className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border dark:border-gray-600 truncate max-w-[100px]">{i.nombre}</span>
+                                        <span key={idx} className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border dark:border-gray-600 truncate max-w-[100px]">
+                                            {i.quantity > 1 ? `(${i.quantity}) ` : ''}{i.nombre}
+                                        </span>
                                     ))}
                                     {order.items.length > 3 && <span>...</span>}
                                 </div>

@@ -28,6 +28,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   cartId: string; // Unique ID for the item in cart
+  quantity: number; // New: Quantity of this item
   isRedeemed?: boolean; // New: Is this item being claimed for free?
   originalPrice?: number; // To restore price if un-redeemed
 }

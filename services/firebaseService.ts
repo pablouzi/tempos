@@ -371,10 +371,12 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
   // Compute needs & costs
   cartItems.forEach(item => {
      let itemCost = 0;
+     const qty = item.quantity || 1;
+
      if (item.receta && item.receta.length > 0) {
         item.receta.forEach(recipeItem => {
             if (!requiredIngredients[recipeItem.idInsumo]) requiredIngredients[recipeItem.idInsumo] = 0;
-            requiredIngredients[recipeItem.idInsumo] += recipeItem.cantidadRequerida;
+            requiredIngredients[recipeItem.idInsumo] += (recipeItem.cantidadRequerida * qty);
 
             const ingData = ingredientDocs[recipeItem.idInsumo]?.data();
             if (ingData) {
@@ -384,7 +386,7 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
      } else {
         itemCost = item.costoCompra || 0;
      }
-     totalTransactionCost += itemCost;
+     totalTransactionCost += (itemCost * qty);
   });
 
   // --- 2. EXECUTION (Write Phase - Parallel) ---
@@ -409,8 +411,9 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
   if (customerId && customerSnap && customerSnap.exists()) {
       const currentStamps = customerSnap.data().stamps || 0;
       cartItems.forEach(item => {
-        if (item.givesStamp && !item.isRedeemed) stampsEarned += 1;
-        if (item.isRedeemed) stampsSpent += 10;
+        const qty = item.quantity || 1;
+        if (item.givesStamp && !item.isRedeemed) stampsEarned += (1 * qty);
+        if (item.isRedeemed) stampsSpent += (10 * qty);
       });
       const finalStamps = currentStamps + stampsEarned - stampsSpent;
       
@@ -437,16 +440,20 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
   writePromises.push(updateDoc(sessionDoc.ref, sessionUpdates));
 
   // D. Create Sale Record
+  // Group items by unique combination (name + redeemed status) for cleaner history,
+  // although frontend now sends them grouped. We re-reduce just in case to be safe/consistent.
   const groupedItems = cartItems.reduce((acc, item) => {
     const key = `${item.nombre}_${item.isRedeemed ? 'free' : 'paid'}`;
     const existing = acc.find(i => `${i.nombre}_${i.isRedeemed ? 'free' : 'paid'}` === key);
+    const qty = item.quantity || 1;
+    
     if (existing) {
-      existing.cantidad += 1;
+      existing.cantidad += qty;
     } else {
       acc.push({ 
         nombre: item.nombre, 
         precio: item.precio, 
-        cantidad: 1,
+        cantidad: qty,
         isRedeemed: item.isRedeemed || false
       });
     }

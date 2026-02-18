@@ -19,7 +19,9 @@ import {
   LucideIcon,
   X,
   Clock, // Imported Clock for Pending Orders
-  PauseCircle // Imported PauseCircle
+  PauseCircle, // Imported PauseCircle
+  Plus,
+  Minus
 } from 'lucide-react';
 import { Product, CartItem, Customer, PaymentMethod, CashSession, PendingOrder } from './types';
 import { getProducts, getIngredients, processSale, deleteProduct, getUserRole, getCustomers, createCustomer, getActiveCashSession, getSalesHistory } from './services/firebaseService';
@@ -212,18 +214,37 @@ const MainContent: React.FC = () => {
   };
 
   const addToCart = (product: Product) => {
-    const newItem: CartItem = {
-      ...product,
-      cartId: Math.random().toString(36).substr(2, 9),
-      originalPrice: product.precio,
-      isRedeemed: false
-    };
-    setCart(prev => [...prev, newItem]);
+    setCart(prev => {
+      // Check if product exists with same isRedeemed status (default false when adding)
+      const existingItem = prev.find(item => item.id === product.id && !item.isRedeemed);
+      
+      if (existingItem) {
+        return prev.map(item => 
+          item.cartId === existingItem.cartId 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+
+      const newItem: CartItem = {
+        ...product,
+        cartId: Math.random().toString(36).substr(2, 9),
+        originalPrice: product.precio,
+        isRedeemed: false,
+        quantity: 1
+      };
+      return [...prev, newItem];
+    });
   };
 
-  const removeFromCart = (cartId: string) => {
-      setCart(prev => prev.filter(item => item.cartId !== cartId));
-  }
+  const updateQuantity = (cartId: string, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.cartId === cartId) {
+        return { ...item, quantity: Math.max(0, item.quantity + delta) };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -280,7 +301,7 @@ const MainContent: React.FC = () => {
 
   const handlePaymentConfirm = (method: PaymentMethod, received?: number, change?: number) => {
       setPaymentStatus('success'); 
-      const total = cart.reduce((sum, item) => sum + item.precio, 0);
+      const total = cart.reduce((sum, item) => sum + (item.precio * item.quantity), 0);
       const cartSnapshot = [...cart]; 
       const customerSnapshot = selectedCustomer ? { ...selectedCustomer } : undefined;
 
@@ -295,8 +316,9 @@ const MainContent: React.FC = () => {
       }
 
       if (customerSnapshot) {
-           const stampsEarned = cart.filter(i => i.givesStamp && !i.isRedeemed).length;
-           const redeemedCount = cart.filter(i => i.isRedeemed).length;
+           const stampsEarned = cart.reduce((acc, i) => acc + (i.givesStamp && !i.isRedeemed ? i.quantity : 0), 0);
+           const redeemedCount = cart.reduce((acc, i) => acc + (i.isRedeemed ? i.quantity : 0), 0);
+           
            const newStamps = customerSnapshot.stamps + stampsEarned - (redeemedCount * 10);
            const updatedCustomer = { ...customerSnapshot, stamps: newStamps };
            setSelectedCustomer(updatedCustomer);
@@ -433,7 +455,7 @@ const MainContent: React.FC = () => {
     });
   };
   
-  const cartTotal = cart.reduce((sum, item) => sum + item.precio, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (item.precio * item.quantity), 0);
   
   const filteredProducts = useMemo(() => {
     return products.map(product => ({
@@ -570,9 +592,9 @@ const MainContent: React.FC = () => {
                                 
                                 {!isCollapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Finanzas</p>}
 
+                                <NavItem view={View.DAILY_REPORT} label="CafeinAi" icon={FileText} />
                                 <NavItem view={View.INSIGHTS} label="Smart Insights" icon={Activity} />
                                 <NavItem view={View.FINANCE} label="Rentabilidad" icon={PieChart} />
-                                <NavItem view={View.DAILY_REPORT} label="Reporte Diario" icon={FileText} />
                                 <NavItem view={View.TELEMETRY} label="Sistema Logs" icon={BarChart3} />
                               </>
                           )}
@@ -793,17 +815,30 @@ const MainContent: React.FC = () => {
                                                         <img src={item.imagen_url} alt="" className="w-12 h-12 rounded-lg object-cover bg-gray-100" />
                                                         <div className="flex-grow min-w-0">
                                                             <h4 className="font-bold text-[var(--text-dark)] text-sm truncate">{item.nombre}</h4>
-                                                            <div className="flex items-center gap-2">
-                                                                <p className="text-[var(--primary-color)] font-bold text-sm">{formatCurrency(item.precio)}</p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <p className="text-[var(--primary-color)] font-bold text-sm">{formatCurrency(item.precio * item.quantity)}</p>
                                                                 {item.isRedeemed && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 rounded-full font-bold">FREE</span>}
                                                             </div>
                                                         </div>
-                                                        <button 
-                                                            onClick={() => removeFromCart(item.cartId)}
-                                                            className="text-gray-300 hover:text-red-500 p-2 transition-colors xl:opacity-0 xl:group-hover:opacity-100"
-                                                        >
-                                                            <LogOut size={16} className="rotate-180" />
-                                                        </button>
+                                                        
+                                                        {/* Quantity Controls */}
+                                                        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                                            <button 
+                                                                onClick={() => updateQuantity(item.cartId, -1)}
+                                                                className="p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                                                            >
+                                                                <Minus size={14} />
+                                                            </button>
+                                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 min-w-[16px] text-center">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <button 
+                                                                onClick={() => updateQuantity(item.cartId, 1)}
+                                                                className="p-1 text-gray-500 hover:text-green-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))
                                             )}
@@ -854,7 +889,7 @@ const MainContent: React.FC = () => {
                         <ShoppingBag size={24} />
                         {cart.length > 0 && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[var(--main-bg)]">
-                                {cart.length}
+                                {cart.reduce((acc, item) => acc + item.quantity, 0)}
                             </span>
                         )}
                         <span className="font-bold text-sm ml-1">{formatCurrency(cartTotal)}</span>

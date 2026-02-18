@@ -158,7 +158,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole, currentUser }
 
     const sorted = Object.entries(productCount)
         .sort((a, b) => b[1] - a[1]) 
-        .slice(0, 5)
+        .slice(0, 10)
         .map(([name, count]) => ({ name, count }));
     
     const maxVal = sorted[0]?.count || 1;
@@ -180,43 +180,9 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole, currentUser }
 
     return Object.entries(productCount)
         .sort((a, b) => a[1] - b[1])
-        .slice(0, 5) 
+        .slice(0, 10) 
         .map(([name, count]) => ({ name, count }));
   }, [validSales, products]);
-
-  const hourlyActivity = useMemo(() => {
-    const hours = new Array(24).fill(0); 
-    const chartSales = filteredSales.filter(s => s.status === 'completed');
-
-    chartSales.forEach(sale => {
-        if (!sale.fecha) return;
-        
-        let dateObj: Date;
-        try {
-            if (sale.fecha && typeof sale.fecha.toDate === 'function') {
-                dateObj = sale.fecha.toDate();
-            } else {
-                dateObj = new Date(sale.fecha);
-            }
-        } catch (e) {
-            return; 
-        }
-
-        if (isNaN(dateObj.getTime())) return;
-
-        const hour = dateObj.getHours();
-        if (hour >= 0 && hour < 24) hours[hour]++;
-    });
-
-    const maxActivity = Math.max(...hours, 1);
-    
-    return hours.map((count, hour) => ({
-        hour, 
-        count, 
-        heightPercent: (count / maxActivity) * 100, 
-        label: `${hour}:00`
-    })); 
-  }, [filteredSales]);
 
   // --- Grouping Logic ---
   const groupedTransactions = useMemo(() => {
@@ -472,10 +438,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole, currentUser }
         </div>
 
         {/* Detailed Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-bold text-gray-800 text-lg">Top 5 Ventas 🌟</h3>
+                    <h3 className="font-bold text-gray-800 text-lg">Top 10 Ventas 🌟</h3>
                 </div>
                 {topProducts.length === 0 ? <div className="flex-grow flex items-center justify-center text-gray-400">Sin datos</div> : (
                     <div className="space-y-4 flex-grow">
@@ -493,33 +459,7 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ userRole, currentUser }
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
-                <h3 className="font-bold text-gray-800 text-lg mb-6">Actividad 24h 🕗</h3>
-                <div className="flex-grow flex items-end gap-1 h-40">
-                    {hourlyActivity.map((slot, idx) => (
-                        <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                            <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                                <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-nowrap text-center">
-                                    <div className="font-bold">{slot.count}</div>
-                                    <div className="text-[10px] opacity-75">{slot.label}</div>
-                                </div>
-                                <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1"></div>
-                            </div>
-                            <div 
-                                className={`w-full max-w-[12px] rounded-t-sm transition-all duration-200 ${slot.count > 0 ? 'bg-coffee-600 opacity-90 group-hover:opacity-100' : 'bg-gray-100'}`} 
-                                style={{ height: `${slot.count > 0 ? Math.max(slot.heightPercent, 5) : 2}%` }}
-                            ></div>
-                            {idx % 4 === 0 && (
-                                <div className="absolute top-full mt-1 text-[9px] text-gray-400 font-mono whitespace-nowrap">
-                                    {idx}h
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
-                 <h3 className="font-bold text-gray-800 text-lg mb-6">Menos Vendidos 📉</h3>
+                 <h3 className="font-bold text-gray-800 text-lg mb-6">10 Menos Vendidos 📉</h3>
                  <div className="flex-grow space-y-3">
                     {leastSoldProducts.map((prod, idx) => (
                         <div key={idx} className="flex justify-between items-center p-2 rounded bg-gray-50">
