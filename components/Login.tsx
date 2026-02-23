@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import logoTempos from '../src/logo-tempos.png';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -32,10 +33,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
         <div className="text-center mb-8">
-            <div className="bg-coffee-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                ☕
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800">CaféPOS</h2>
+            {/* Reemplaza el h1 anterior por esto */}
+<div className="flex justify-center mb-6">
+  <img 
+    src={logoTempos} 
+    alt="Logo TEMPOS" 
+    className="h-20 w-auto object-contain" /* Ajusta h-20 según el tamaño que quieras */
+  />
+</div>
+{/* Si quieres mantener el texto "TEMPOS" abajo, puedes agregarlo en un h2 */}
+{/* <h2 className="text-center text-2xl font-bold text-gray-800 mb-4">TEMPOS</h2> */}
             <p className="text-gray-500">Inicia sesión para continuar</p>
         </div>
 
