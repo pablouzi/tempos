@@ -5,14 +5,15 @@ import { getAuth } from "firebase/auth";
 // --- CONFIGURACIÓN DE FIREBASE ---
 // PEGA TUS CREDENCIALES AQUÍ ABAJO
 const firebaseConfig = {
-  apiKey: "AIzaSyCPV_aP2d62JlfwyAZdJxIlMSRc-rGDMpI",
-  authDomain: "cafestore-ffbec.firebaseapp.com",
-  projectId: "cafestore-ffbec",
-  storageBucket: "cafestore-ffbec.firebasestorage.app",
-  messagingSenderId: "1096912643765",
-  appId: "1:1096912643765:web:16f929994f508002d300fc",
-  measurementId: "G-HYK99RRJ2Q"
+  apiKey: "AIzaSyB8z8FUTngy5D_Qd2CE9SzthKUwPehQZFE",
+  authDomain: "tempos-25da2.firebaseapp.com",
+  projectId: "tempos-25da2",
+  storageBucket: "tempos-25da2.firebasestorage.app",
+  messagingSenderId: "1019521027037",
+  appId: "1:1019521027037:web:8a9d9aad15ad6962a48434",
+  measurementId: "G-R2NRDQPC6V"
 };
+
 
 // Initialize Firebase using modular function (matches index.html gstatic version)
 // Using (firebaseApp as any).initializeApp to bypass "Module has no exported member 'initializeApp'" error
