@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { generateDemoData } from '../services/firebaseService';
 
 interface ThemeSettingsProps {
   onClose: () => void;
@@ -7,6 +8,19 @@ interface ThemeSettingsProps {
 
 const ThemeSettings: React.FC<ThemeSettingsProps> = ({ onClose }) => {
   const { settings, updateSettings, applyPreset } = useTheme();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateData = async () => {
+    try {
+      setIsGenerating(true);
+      await generateDemoData();
+      window.Swal.fire('Éxito', 'Se han generado datos de prueba (ventas, cajas y clientes) para los últimos 7 días. Recarga la página o cambia de vista para ver reflejados los cambios.', 'success');
+    } catch (e: any) {
+      window.Swal.fire('Error', e.message, 'error');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">
@@ -180,7 +194,15 @@ const ThemeSettings: React.FC<ThemeSettingsProps> = ({ onClose }) => {
 */}
         </div>
 
-        <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-800">
+        <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-800 space-y-3">
+          <button
+            onClick={handleGenerateData}
+            disabled={isGenerating}
+            className={`w-full py-2 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl font-bold transition-colors text-sm flex justify-center items-center gap-2 ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100 dark:hover:bg-red-900/40'}`}
+          >
+            {isGenerating ? 'Generando...' : '⚙️ Generar Datos de Prueba (Demo)'}
+          </button>
+
           <button
             onClick={onClose}
             className="w-full py-3 bg-gray-800 dark:bg-gray-700 text-white rounded-xl font-bold hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors"

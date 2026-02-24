@@ -701,3 +701,139 @@ export const seedDatabase = async () => {
 
   await batch.commit();
 };
+
+// --- DEMO DATA GENERATOR ---
+
+export const generateDemoData = async () => {
+  try {
+    const [products, customers] = await Promise.all([
+      getProducts(),
+      getCustomers()
+    ]);
+
+    if (products.length === 0) throw new Error("Añade al menos un producto antes de generar datos.");
+
+    const batch = writeBatch(db);
+    let writeCount = 0;
+
+    const now = new Date();
+    const daysToGenerate = 7;
+
+    for (let i = daysToGenerate; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+
+      // Create Cash Session for the day
+      const sessionRef = doc(collection(db, COLLECTION_CASH_SESSIONS));
+      const openTime = new Date(date);
+      openTime.setHours(9, 0, 0, 0);
+      const closeTime = new Date(date);
+      closeTime.setHours(21, 0, 0, 0);
+
+      let dailySalesCash = 0;
+      let dailySalesCard = 0;
+
+      const numSales = Math.floor(Math.random() * 25) + 15; // 15 to 40 sales a day
+
+      for (let j = 0; j < numSales; j++) {
+        const saleTime = new Date(openTime.getTime() + Math.random() * (closeTime.getTime() - openTime.getTime()));
+        const numItems = Math.floor(Math.random() * 3) + 1;
+        const cartItems: any[] = [];
+        let saleTotal = 0;
+        let saleCostTotal = 0;
+        let stampsEarned = 0;
+
+        for (let k = 0; k < numItems; k++) {
+          const product = products[Math.floor(Math.random() * products.length)];
+          const qty = (Math.random() > 0.8) ? 2 : 1;
+
+          cartItems.push({
+            nombre: product.nombre,
+            precio: product.precio,
+            cantidad: qty,
+            givesStamp: product.givesStamp || false,
+            isRedeemed: false,
+            category: product.category || 'General'
+          });
+
+          saleTotal += product.precio * qty;
+          saleCostTotal += (product.precio * (Math.random() * 0.2 + 0.3)) * qty;
+          if (product.givesStamp) stampsEarned += qty;
+        }
+
+        const isCash = Math.random() > 0.5;
+        const paymentMethod = isCash ? 'efectivo' : 'tarjeta';
+
+        if (isCash) dailySalesCash += saleTotal;
+        else dailySalesCard += saleTotal;
+
+        let customerId = undefined;
+        if (customers.length > 0 && Math.random() > 0.6) {
+          const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
+          customerId = randomCustomer.id;
+
+          const custRef = doc(db, COLLECTION_CUSTOMERS, customerId);
+          batch.update(custRef, {
+            stamps: (randomCustomer.stamps || 0) + stampsEarned,
+            totalPurchases: (randomCustomer.totalPurchases || 0) + 1,
+            totalSpent: (randomCustomer.totalSpent || 0) + saleTotal,
+            lastVisit: Timestamp.fromDate(saleTime)
+          });
+          writeCount++;
+        }
+
+        const saleRef = doc(collection(db, COLLECTION_SALES));
+        const newSale: any = {
+          fecha: Timestamp.fromDate(saleTime),
+          total: saleTotal,
+          items: cartItems,
+          status: 'completed',
+          paymentMethod,
+          costoTotal: saleCostTotal,
+          change: 0,
+          stampsEarned: customerId ? stampsEarned : 0,
+          stampsSpent: 0
+        };
+
+        if (isCash) newSale.amountReceived = saleTotal;
+        if (customerId) newSale.customerId = customerId;
+
+        batch.set(saleRef, newSale as Sale);
+        writeCount++;
+
+        if (writeCount > 400) {
+          await batch.commit();
+          writeCount = 0;
+        }
+      }
+
+      const sessionData: CashSession = {
+        id: sessionRef.id,
+        openedBy: 'DemoUser',
+        openTime: Timestamp.fromDate(openTime),
+        closeTime: Timestamp.fromDate(closeTime),
+        initialBalance: 50000,
+        expectedCash: 50000 + dailySalesCash,
+        salesCash: dailySalesCash,
+        salesCard: dailySalesCard,
+        salesOther: 0,
+        actualCash: 50000 + dailySalesCash + (Math.floor(Math.random() * 1000) - 500),
+        difference: 0,
+        status: 'closed'
+      };
+      sessionData.difference = (sessionData.actualCash || 0) - sessionData.expectedCash;
+
+      batch.set(sessionRef, sessionData);
+      writeCount++;
+    }
+
+    if (writeCount > 0) {
+      await batch.commit();
+    }
+
+    return true;
+  } catch (e: any) {
+    console.error("Demo Generation Error", e);
+    throw new Error("No se pudo generar datos: " + e.message);
+  }
+};
