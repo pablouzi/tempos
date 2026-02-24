@@ -153,6 +153,7 @@ const DailySalesReport: React.FC = () => {
       const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
       const prompt = `
+       Hoy es ${new Date().toLocaleDateString('es-CL')}.
         Actúa como consultor senior para "TEMPOS". Analiza los datos de hoy en Concepción:
         - Clima: ${processed.weather.condition} con ${processed.weather.temp}°C.
         - Ticket Promedio: ${formatCurrency(processed.ticket)}.
