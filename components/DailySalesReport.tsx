@@ -153,8 +153,10 @@ const DailySalesReport: React.FC = () => {
       const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
       const prompt = `
-       Hoy es ${new Date().toLocaleDateString('es-CL')}.
-        Actúa como consultor senior para "TEMPOS". Analiza los datos de hoy en Concepción:
+       INSTRUCCIÓN DE SISTEMA OBLIGATORIA:
+  La fecha de hoy es estrictamente ${new Date().toLocaleDateString('es-CL')}. 
+  Olvida cualquier fecha que veas en los registros de venta para determinar el día actual. 
+  Solo usa los registros para analizar tendencias, no para decir qué día es hoy.
         - Clima: ${processed.weather.condition} con ${processed.weather.temp}°C.
         - Ticket Promedio: ${formatCurrency(processed.ticket)}.
         - Top 5 Productos: ${processed.top5.map(p => `${p.nombre} (${p.cantidad}un)`).join(', ')}.
