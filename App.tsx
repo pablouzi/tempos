@@ -24,7 +24,8 @@ import {
     Clock, // Imported Clock for Pending Orders
     PauseCircle, // Imported PauseCircle
     Plus,
-    Minus
+    Minus,
+    Gift
 } from 'lucide-react';
 import { Product, CartItem, Customer, PaymentMethod, CashSession, PendingOrder } from './types';
 import { getProducts, getIngredients, processSale, deleteProduct, getUserRole, getCustomers, createCustomer, getActiveCashSession, getSalesHistory } from './services/firebaseService';
@@ -247,6 +248,50 @@ const MainContent: React.FC = () => {
             }
             return item;
         }).filter(item => item.quantity > 0));
+    };
+
+    const toggleRedeem = (cartId: string) => {
+        if (!selectedCustomer) {
+            window.Swal.fire('Atención', 'Selecciona un cliente frecuente primero.', 'warning');
+            return;
+        }
+
+        setCart(prev => {
+            const item = prev.find(i => i.cartId === cartId);
+            if (!item) return prev;
+
+            const redeemedCount = prev.reduce((acc, i) => acc + (i.isRedeemed ? i.quantity : 0), 0);
+
+            if (!item.isRedeemed) {
+                // Trying to redeem
+                if (!item.givesStamp) {
+                    window.Swal.fire('Error', 'Este producto no aplica para sellos.', 'warning');
+                    return prev;
+                }
+
+                const availableStamps = selectedCustomer.stamps - (redeemedCount * 10);
+
+                if (availableStamps >= 10) {
+                    if (item.quantity > 1) {
+                        const newItem: CartItem = { ...item, cartId: Math.random().toString(36).substr(2, 9), quantity: item.quantity - 1 };
+                        const redeemedItem: CartItem = { ...item, quantity: 1, isRedeemed: true, precio: 0 };
+                        // Replace the old item with the split items
+                        const index = prev.findIndex(i => i.cartId === cartId);
+                        const newCart = [...prev];
+                        newCart.splice(index, 1, newItem, redeemedItem);
+                        return newCart;
+                    } else {
+                        return prev.map(i => i.cartId === cartId ? { ...i, isRedeemed: true, precio: 0 } : i);
+                    }
+                } else {
+                    window.Swal.fire('Error', 'No tiene suficientes sellos (requiere 10).', 'error');
+                    return prev;
+                }
+            } else {
+                // Unredeem
+                return prev.map(i => i.cartId === cartId ? { ...i, isRedeemed: false, precio: i.originalPrice || 0 } : i);
+            }
+        });
     };
 
     const handleSelectCustomer = (customer: Customer) => {
@@ -827,23 +872,39 @@ const MainContent: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                        {/* Quantity Controls */}
-                                                        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                                            <button
-                                                                onClick={() => updateQuantity(item.cartId, -1)}
-                                                                className="p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
-                                                            >
-                                                                <Minus size={14} />
-                                                            </button>
-                                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200 min-w-[16px] text-center">
-                                                                {item.quantity}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => updateQuantity(item.cartId, 1)}
-                                                                className="p-1 text-gray-500 hover:text-green-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
-                                                            >
-                                                                <Plus size={14} />
-                                                            </button>
+                                                        {/* Actions & Quantity */}
+                                                        <div className="flex items-center gap-2">
+                                                            {/* Redeem Button (Only if givesStamp and customer is selected) */}
+                                                            {selectedCustomer && item.givesStamp && (
+                                                                <button
+                                                                    onClick={() => toggleRedeem(item.cartId)}
+                                                                    className={`p-2 rounded-lg transition-colors border ${item.isRedeemed
+                                                                            ? 'bg-green-100 text-green-600 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                                            : 'bg-white text-orange-400 border-orange-200 hover:bg-orange-50 dark:bg-gray-700 dark:text-orange-400 dark:border-gray-600 dark:hover:bg-gray-600'
+                                                                        }`}
+                                                                    title={item.isRedeemed ? 'Cancelar Canje' : 'Canjear (10 sellos)'}
+                                                                >
+                                                                    <Gift size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            )}
+
+                                                            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 border border-transparent">
+                                                                <button
+                                                                    onClick={() => updateQuantity(item.cartId, -1)}
+                                                                    className="p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                                                                >
+                                                                    <Minus size={14} />
+                                                                </button>
+                                                                <span className="text-xs font-bold text-gray-700 dark:text-gray-200 min-w-[16px] text-center">
+                                                                    {item.quantity}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => updateQuantity(item.cartId, 1)}
+                                                                    className="p-1 text-gray-500 hover:text-green-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                                                                >
+                                                                    <Plus size={14} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))

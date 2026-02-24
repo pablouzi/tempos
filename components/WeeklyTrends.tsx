@@ -160,17 +160,17 @@ const WeeklyTrends: React.FC<WeeklyTrendsProps> = ({ sales }) => {
     <div className="space-y-8 animate-fade-in">
 
       {/* 1. Bar Chart Visualization */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
+      <div className="bg-white dark:bg-brand-card p-6 rounded-xl shadow-sm border border-gray-200 dark:border-white/5">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
           Proyección de Ingresos Semanal
         </h3>
         <div className="h-48 flex items-end justify-between gap-2 md:gap-4 relative">
           {/* Background Lines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
-            <div className="border-t border-gray-900 w-full h-0"></div>
-            <div className="border-t border-gray-900 w-full h-0"></div>
-            <div className="border-t border-gray-900 w-full h-0"></div>
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5 dark:opacity-20">
+            <div className="border-t border-gray-900 dark:border-white w-full h-0"></div>
+            <div className="border-t border-gray-900 dark:border-white w-full h-0"></div>
+            <div className="border-t border-gray-900 dark:border-white w-full h-0"></div>
           </div>
 
           {metrics.map((day) => {
@@ -180,12 +180,12 @@ const WeeklyTrends: React.FC<WeeklyTrendsProps> = ({ sales }) => {
 
             return (
               <div key={day.dayIndex} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                <div className="mb-1 text-[10px] font-bold text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mb-1 text-[10px] font-bold text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                   {formatCurrency(day.projection)}
                 </div>
                 <div
                   className={`w-full max-w-[40px] rounded-t-sm transition-all duration-700 ease-out relative
-                            ${isTop ? 'bg-green-500' : isToday ? 'bg-coffee-600' : 'bg-gray-300 hover:bg-coffee-400'}`}
+                            ${isTop ? 'bg-green-500' : isToday ? 'bg-coffee-600' : 'bg-gray-300 dark:bg-gray-700 hover:bg-coffee-400 dark:hover:bg-coffee-500'}`}
                   style={{ height: `${Math.max(height, 5)}%` }}
                 >
                   {day.trend === 'up' && (
@@ -196,7 +196,7 @@ const WeeklyTrends: React.FC<WeeklyTrendsProps> = ({ sales }) => {
                     </div>
                   )}
                 </div>
-                <span className={`mt-2 text-xs uppercase font-bold ${isToday ? 'text-coffee-700' : 'text-gray-400'}`}>
+                <span className={`mt-2 text-xs uppercase font-bold ${isToday ? 'text-coffee-700 dark:text-coffee-400' : 'text-gray-400 dark:text-gray-500'}`}>
                   {day.dayName.substring(0, 3)}
                 </span>
               </div>
@@ -206,20 +206,20 @@ const WeeklyTrends: React.FC<WeeklyTrendsProps> = ({ sales }) => {
       </div>
 
       {/* 2. Cards Grid (Dashboard) */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Análisis Detallado por Día</h3>
+      <div className="mt-8">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Análisis Detallado por Día</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {metrics.map((day) => {
             const isToday = new Date().getDay() === day.dayIndex;
             // Card Color Logic
-            let borderClass = 'border-gray-200';
-            let bgClass = 'bg-white';
+            let borderClass = 'border-gray-200 dark:border-white/5';
+            let bgClass = 'bg-white dark:bg-brand-card';
             if (day.rank <= 2) {
-              borderClass = 'border-green-300';
-              bgClass = 'bg-green-50';
+              borderClass = 'border-green-300 dark:border-green-800/50';
+              bgClass = 'bg-green-50 dark:bg-green-900/20';
             }
             if (isToday) {
-              borderClass = 'border-coffee-400 ring-2 ring-coffee-100';
+              borderClass = 'border-coffee-400 ring-2 ring-coffee-100 dark:border-coffee-500 dark:ring-coffee-900/30';
             }
 
             return (
@@ -227,31 +227,31 @@ const WeeklyTrends: React.FC<WeeklyTrendsProps> = ({ sales }) => {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h4 className={`font-bold text-lg ${isToday ? 'text-coffee-800' : 'text-gray-700'}`}>
+                    <h4 className={`font-bold text-lg ${isToday ? 'text-coffee-800 dark:text-coffee-300' : 'text-gray-700 dark:text-gray-200'}`}>
                       {day.dayName}
                     </h4>
-                    <div className="text-xs text-gray-500 font-mono">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                       Ticket Prom: {formatCurrency(day.avgTicket)}
                     </div>
                   </div>
-                  {day.rank === 1 && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold">★ #1</span>}
-                  {day.trend === 'up' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">↗ +10%</span>}
+                  {day.rank === 1 && <span className="text-xs bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 px-2 py-1 rounded-full font-bold">★ #1</span>}
+                  {day.trend === 'up' && <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400 px-2 py-1 rounded-full font-bold">↗ +10%</span>}
                 </div>
 
                 {/* Metrics */}
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Producto Top</span>
-                    <span className="font-semibold text-gray-800 truncate max-w-[100px]" title={day.topProduct}>{day.topProduct}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Producto Top</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[100px]" title={day.topProduct}>{day.topProduct}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Hora Peak</span>
-                    <span className="font-semibold text-gray-800">{day.peakHour}:00 - {day.peakHour + 1}:00</span>
+                    <span className="text-gray-500 dark:text-gray-400">Hora Peak</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">{day.peakHour}:00 - {day.peakHour + 1}:00</span>
                   </div>
                 </div>
 
                 {/* AI Recommendation Box */}
-                <div className="bg-white/60 p-2 rounded border border-black/5 text-xs text-gray-600 italic leading-relaxed">
+                <div className="bg-white/60 dark:bg-black/20 p-2 rounded border border-black/5 dark:border-white/5 text-xs text-gray-600 dark:text-gray-300 italic leading-relaxed">
                   "{getRecommendation(day)}"
                 </div>
               </div>

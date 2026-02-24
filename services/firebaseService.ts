@@ -1,10 +1,10 @@
-import { 
-  collection, 
-  getDocs, 
+import {
+  collection,
+  getDocs,
   getDoc,
-  doc, 
-  runTransaction, 
-  serverTimestamp, 
+  doc,
+  runTransaction,
+  serverTimestamp,
   addDoc,
   writeBatch,
   deleteDoc,
@@ -59,11 +59,11 @@ export const getSalesHistory = async (): Promise<Sale[]> => {
     // Order by date descending (newest first)
     const q = query(salesRef, orderBy("fecha", "desc"));
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map(doc => {
       const data = doc.data();
-      return { 
-        id: doc.id, 
+      return {
+        id: doc.id,
         ...data,
         status: data.status || 'completed' // Default legacy sales to completed
       } as Sale;
@@ -79,20 +79,20 @@ export const getSalesByDateRange = async (startDate: Date, endDate: Date): Promi
   try {
     const salesRef = collection(db, COLLECTION_SALES);
     const q = query(
-      salesRef, 
+      salesRef,
       where("fecha", ">=", startDate),
       where("fecha", "<=", endDate),
       orderBy("fecha", "desc")
     );
-    
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-          id: doc.id, 
-          ...data,
-          status: data.status || 'completed'
-        } as Sale;
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        status: data.status || 'completed'
+      } as Sale;
     });
   } catch (error) {
     console.error("Error fetching sales by date range:", error);
@@ -145,7 +145,7 @@ export const openCashSession = async (initialBalance: number, userId: string) =>
 export const closeCashSession = async (sessionId: string, actualCash: number) => {
   const ref = doc(db, COLLECTION_CASH_SESSIONS, sessionId);
   const snap = await getDoc(ref);
-  if(!snap.exists()) throw new Error("Sesión no encontrada");
+  if (!snap.exists()) throw new Error("Sesión no encontrada");
 
   const data = snap.data() as CashSession;
   const expected = data.expectedCash;
@@ -175,8 +175,8 @@ export const getCustomerByPhone = async (phone: string): Promise<Customer | null
     if (!querySnapshot.empty) {
       const docData = querySnapshot.docs[0];
       const data = docData.data();
-      return { 
-        id: docData.id, 
+      return {
+        id: docData.id,
         ...data,
         stamps: data.stamps || 0 // Ensure stamps exists
       } as Customer;
@@ -194,12 +194,12 @@ export const getCustomers = async (): Promise<Customer[]> => {
     const q = query(collection(db, COLLECTION_CUSTOMERS), orderBy("stamps", "desc"));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-            id: doc.id, 
-            ...data,
-            stamps: data.stamps || 0
-        } as Customer;
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        stamps: data.stamps || 0
+      } as Customer;
     });
   } catch (error) {
     console.error("Error fetching customers:", error);
@@ -217,7 +217,9 @@ export const createCustomer = async (name: string, phone: string): Promise<Custo
     phone,
     points: 0,
     stamps: 0, // Init stamps
-    lastVisit: serverTimestamp()
+    lastVisit: serverTimestamp(),
+    totalPurchases: 0,
+    totalSpent: 0
   };
 
   const docRef = await addDoc(collection(db, COLLECTION_CUSTOMERS), newCustomerData);
@@ -228,7 +230,7 @@ export const updateCustomerPoints = async (customerId: string, pointsToAdd: numb
   // Legacy function kept if needed, but logic is moving to processSale
   const ref = doc(db, COLLECTION_CUSTOMERS, customerId);
   await updateDoc(ref, {
-      points: pointsToAdd // This logic seems incorrect in original file (was setting, not adding), but ignored for new stamp logic
+    points: pointsToAdd // This logic seems incorrect in original file (was setting, not adding), but ignored for new stamp logic
   });
 };
 
@@ -252,10 +254,10 @@ export const deleteCustomer = async (id: string) => {
   }
 };
 
-export const batchImportCustomers = async (customers: {name: string, phone: string}[]) => {
-  const CHUNK_SIZE = 450; 
+export const batchImportCustomers = async (customers: { name: string, phone: string }[]) => {
+  const CHUNK_SIZE = 450;
   const chunks = [];
-  
+
   for (let i = 0; i < customers.length; i += CHUNK_SIZE) {
     chunks.push(customers.slice(i, i + CHUNK_SIZE));
   }
@@ -270,7 +272,9 @@ export const batchImportCustomers = async (customers: {name: string, phone: stri
           phone: c.phone,
           points: 0,
           stamps: 0,
-          lastVisit: serverTimestamp()
+          lastVisit: serverTimestamp(),
+          totalPurchases: 0,
+          totalSpent: 0
         });
       });
       await batch.commit();
@@ -306,12 +310,12 @@ export const updateIngredient = async (id: string, data: Partial<Ingredient>) =>
 // --- Transactional Sale Logic ---
 
 interface ProcessSaleOptions {
-    cartItems: CartItem[];
-    total: number;
-    customerId?: string;
-    paymentMethod: PaymentMethod;
-    amountReceived?: number;
-    change?: number;
+  cartItems: CartItem[];
+  total: number;
+  customerId?: string;
+  paymentMethod: PaymentMethod;
+  amountReceived?: number;
+  change?: number;
 }
 
 export const processSale = async ({ cartItems, total, customerId, paymentMethod, amountReceived, change }: ProcessSaleOptions) => {
@@ -328,7 +332,7 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
   // --- 1. DATA GATHERING (Read Phase) ---
   // To use Promise.all for writes, we first need to read current states to calculate updates.
   // This replaces the strict "runTransaction" read-lock, accepting a small race-condition risk for speed.
-  
+
   // 1a. Identify ingredients needed
   const requiredIngredients: Record<string, number> = {};
   const uniqueIngIds = new Set<string>();
@@ -339,19 +343,19 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
 
   // 1b. Check Active Session
   const sessionQ = query(collection(db, COLLECTION_CASH_SESSIONS), where("status", "==", "open"), limit(1));
-  
+
   // Parallel Reads: Ingredients, Session, Customer (if applicable)
   const readPromises: Promise<any>[] = [
-      getDocs(sessionQ), 
-      ...ingredientIds.map(id => getDoc(doc(db, COLLECTION_INGREDIENTS, id)))
+    getDocs(sessionQ),
+    ...ingredientIds.map(id => getDoc(doc(db, COLLECTION_INGREDIENTS, id)))
   ];
-  
+
   if (customerId) {
-      readPromises.push(getDoc(doc(db, COLLECTION_CUSTOMERS, customerId)));
+    readPromises.push(getDoc(doc(db, COLLECTION_CUSTOMERS, customerId)));
   }
 
   const results = await Promise.all(readPromises);
-  
+
   const sessionSnap = results[0];
   const ingredientSnaps = results.slice(1, 1 + ingredientIds.length);
   const customerSnap = customerId ? results[results.length - 1] : null;
@@ -359,34 +363,34 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
   // Validation
   if (sessionSnap.empty) throw new Error("No hay una caja abierta. Por favor abre turno antes de vender.");
   const sessionDoc = sessionSnap.docs[0];
-  
+
   // Inventory Map & Cost Calculation
   const ingredientDocs: Record<string, any> = {};
   ingredientSnaps.forEach((snap: any) => {
-      if(snap.exists()) ingredientDocs[snap.id] = snap;
+    if (snap.exists()) ingredientDocs[snap.id] = snap;
   });
 
   let totalTransactionCost = 0;
 
   // Compute needs & costs
   cartItems.forEach(item => {
-     let itemCost = 0;
-     const qty = item.quantity || 1;
+    let itemCost = 0;
+    const qty = item.quantity || 1;
 
-     if (item.receta && item.receta.length > 0) {
-        item.receta.forEach(recipeItem => {
-            if (!requiredIngredients[recipeItem.idInsumo]) requiredIngredients[recipeItem.idInsumo] = 0;
-            requiredIngredients[recipeItem.idInsumo] += (recipeItem.cantidadRequerida * qty);
+    if (item.receta && item.receta.length > 0) {
+      item.receta.forEach(recipeItem => {
+        if (!requiredIngredients[recipeItem.idInsumo]) requiredIngredients[recipeItem.idInsumo] = 0;
+        requiredIngredients[recipeItem.idInsumo] += (recipeItem.cantidadRequerida * qty);
 
-            const ingData = ingredientDocs[recipeItem.idInsumo]?.data();
-            if (ingData) {
-                itemCost += ((ingData.costoPorUnidad || 0) * recipeItem.cantidadRequerida);
-            }
-        });
-     } else {
-        itemCost = item.costoCompra || 0;
-     }
-     totalTransactionCost += (itemCost * qty);
+        const ingData = ingredientDocs[recipeItem.idInsumo]?.data();
+        if (ingData) {
+          itemCost += ((ingData.costoPorUnidad || 0) * recipeItem.cantidadRequerida);
+        }
+      });
+    } else {
+      itemCost = item.costoCompra || 0;
+    }
+    totalTransactionCost += (itemCost * qty);
   });
 
   // --- 2. EXECUTION (Write Phase - Parallel) ---
@@ -394,48 +398,54 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
 
   // A. Inventory Updates
   ingredientIds.forEach(id => {
-      const snap = ingredientDocs[id];
-      if (snap) {
-          const currentStock = snap.data().stock;
-          const needed = requiredIngredients[id];
-          // We apply the deduction blindly here for speed, assuming the read state is close enough
-          writePromises.push(updateDoc(doc(db, COLLECTION_INGREDIENTS, id), {
-              stock: currentStock - needed
-          }));
-      }
+    const snap = ingredientDocs[id];
+    if (snap) {
+      const currentStock = snap.data().stock;
+      const needed = requiredIngredients[id];
+      // We apply the deduction blindly here for speed, assuming the read state is close enough
+      writePromises.push(updateDoc(doc(db, COLLECTION_INGREDIENTS, id), {
+        stock: currentStock - needed
+      }));
+    }
   });
 
-  // B. Customer Update (Stamps)
+  // B. Customer Update (Stamps, Purchases, Spent)
   let stampsEarned = 0;
   let stampsSpent = 0;
   if (customerId && customerSnap && customerSnap.exists()) {
-      const currentStamps = customerSnap.data().stamps || 0;
-      cartItems.forEach(item => {
-        const qty = item.quantity || 1;
-        if (item.givesStamp && !item.isRedeemed) stampsEarned += (1 * qty);
-        if (item.isRedeemed) stampsSpent += (10 * qty);
-      });
-      const finalStamps = currentStamps + stampsEarned - stampsSpent;
-      
-      // Validation check before writing
-      if (finalStamps < 0) throw new Error("Sellos insuficientes (Validado en backend).");
+    const custData = customerSnap.data();
+    const currentStamps = custData.stamps || 0;
+    const currentPurchases = custData.totalPurchases || 0;
+    const currentSpent = custData.totalSpent || 0;
 
-      writePromises.push(updateDoc(doc(db, COLLECTION_CUSTOMERS, customerId), {
-          stamps: finalStamps,
-          lastVisit: serverTimestamp()
-      }));
+    cartItems.forEach(item => {
+      const qty = item.quantity || 1;
+      if (item.givesStamp && !item.isRedeemed) stampsEarned += (1 * qty);
+      if (item.isRedeemed) stampsSpent += (10 * qty);
+    });
+    const finalStamps = currentStamps + stampsEarned - stampsSpent;
+
+    // Validation check before writing
+    if (finalStamps < 0) throw new Error("Sellos insuficientes (Validado en backend).");
+
+    writePromises.push(updateDoc(doc(db, COLLECTION_CUSTOMERS, customerId), {
+      stamps: finalStamps,
+      lastVisit: serverTimestamp(),
+      totalPurchases: currentPurchases + 1,
+      totalSpent: currentSpent + total
+    }));
   }
 
   // C. Cash Session Update
   const currentSess = sessionDoc.data();
   const sessionUpdates: any = {};
   if (paymentMethod === 'efectivo') {
-     sessionUpdates.salesCash = (currentSess.salesCash || 0) + total;
-     sessionUpdates.expectedCash = (currentSess.expectedCash || 0) + total;
+    sessionUpdates.salesCash = (currentSess.salesCash || 0) + total;
+    sessionUpdates.expectedCash = (currentSess.expectedCash || 0) + total;
   } else if (paymentMethod === 'tarjeta') {
-     sessionUpdates.salesCard = (currentSess.salesCard || 0) + total;
+    sessionUpdates.salesCard = (currentSess.salesCard || 0) + total;
   } else {
-     sessionUpdates.salesOther = (currentSess.salesOther || 0) + total;
+    sessionUpdates.salesOther = (currentSess.salesOther || 0) + total;
   }
   writePromises.push(updateDoc(sessionDoc.ref, sessionUpdates));
 
@@ -446,13 +456,13 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
     const key = `${item.nombre}_${item.isRedeemed ? 'free' : 'paid'}`;
     const existing = acc.find(i => `${i.nombre}_${i.isRedeemed ? 'free' : 'paid'}` === key);
     const qty = item.quantity || 1;
-    
+
     if (existing) {
       existing.cantidad += qty;
     } else {
-      acc.push({ 
-        nombre: item.nombre, 
-        precio: item.precio, 
+      acc.push({
+        nombre: item.nombre,
+        precio: item.precio,
         cantidad: qty,
         isRedeemed: item.isRedeemed || false
       });
@@ -469,16 +479,16 @@ export const processSale = async ({ cartItems, total, customerId, paymentMethod,
     paymentMethod: paymentMethod
   };
   if (paymentMethod === 'efectivo') {
-      saleData.amountReceived = amountReceived;
-      saleData.change = change;
+    saleData.amountReceived = amountReceived;
+    saleData.change = change;
   }
   if (customerId) {
-      saleData.customerId = customerId;
-      saleData.stampsEarned = stampsEarned;
-      saleData.stampsSpent = stampsSpent;
+    saleData.customerId = customerId;
+    saleData.stampsEarned = stampsEarned;
+    saleData.stampsSpent = stampsSpent;
   }
   if (weatherSnapshot) {
-      saleData.weatherSnapshot = weatherSnapshot;
+    saleData.weatherSnapshot = weatherSnapshot;
   }
 
   // Add Sale Creation to promises
@@ -528,7 +538,7 @@ export const approveVoidSale = async (sale: Sale, processedBy: string, directRea
     await runTransaction(db, async (transaction) => {
       // NOTE: Voiding does NOT automatically revert cash in the session logic here for simplicity.
       // Cash discrepancies are handled in session closing via manual count.
-      
+
       // A. Calculate ingredients to restore
       const ingredientsToRestore: Record<string, number> = {};
 
@@ -536,8 +546,8 @@ export const approveVoidSale = async (sale: Sale, processedBy: string, directRea
         const product = productMap[item.nombre];
         if (product && product.receta) {
           product.receta.forEach(rItem => {
-             const totalRestore = rItem.cantidadRequerida * item.cantidad;
-             ingredientsToRestore[rItem.idInsumo] = (ingredientsToRestore[rItem.idInsumo] || 0) + totalRestore;
+            const totalRestore = rItem.cantidadRequerida * item.cantidad;
+            ingredientsToRestore[rItem.idInsumo] = (ingredientsToRestore[rItem.idInsumo] || 0) + totalRestore;
           });
         }
       }
@@ -554,18 +564,30 @@ export const approveVoidSale = async (sale: Sale, processedBy: string, directRea
 
       // C. Handle Stamps Reversal
       if (sale.customerId) {
-          const custRef = doc(db, COLLECTION_CUSTOMERS, sale.customerId);
-          const custSnap = await transaction.get(custRef);
-          if (custSnap.exists()) {
-              const currentStamps = custSnap.data().stamps || 0;
-              const earned = sale.stampsEarned || 0;
-              const spent = sale.stampsSpent || 0;
-              
-              // Reverse: Remove earned, Give back spent
-              // Formula: New = Current - Earned + Spent
-              const newStamps = Math.max(0, currentStamps - earned + spent);
-              transaction.update(custRef, { stamps: newStamps });
-          }
+        const custRef = doc(db, COLLECTION_CUSTOMERS, sale.customerId);
+        const custSnap = await transaction.get(custRef);
+        if (custSnap.exists()) {
+          const custData = custSnap.data();
+          const currentStamps = custData.stamps || 0;
+          const earned = sale.stampsEarned || 0;
+          const spent = sale.stampsSpent || 0;
+
+          // Reverse: Remove earned, Give back spent
+          // Formula: New = Current - Earned + Spent
+          const newStamps = Math.max(0, currentStamps - earned + spent);
+
+          // Reverse purchases and spent
+          const currentPurchases = custData.totalPurchases || 0;
+          const currentSpent = custData.totalSpent || 0;
+          const newPurchases = Math.max(0, currentPurchases - 1);
+          const newSpent = Math.max(0, currentSpent - sale.total);
+
+          transaction.update(custRef, {
+            stamps: newStamps,
+            totalPurchases: newPurchases,
+            totalSpent: newSpent
+          });
+        }
       }
 
       // D. Restore Stock
@@ -577,16 +599,16 @@ export const approveVoidSale = async (sale: Sale, processedBy: string, directRea
 
       // E. Update Sale Status
       const saleRef = doc(db, COLLECTION_SALES, sale.id!);
-      const updateData: any = { 
-          status: 'voided',
-          voidProcessedBy: processedBy
+      const updateData: any = {
+        status: 'voided',
+        voidProcessedBy: processedBy
       };
-      
+
       // If direct void, save the reason
       if (directReason) {
-          updateData.voidReason = directReason;
+        updateData.voidReason = directReason;
       }
-      
+
       transaction.update(saleRef, updateData);
     });
   } catch (error) {
@@ -601,13 +623,13 @@ export const approveVoidSale = async (sale: Sale, processedBy: string, directRea
 export const addStock = async (ingredientId: string, amountToAdd: number) => {
   try {
     await runTransaction(db, async (transaction) => {
-        const sfDocRef = doc(db, COLLECTION_INGREDIENTS, ingredientId);
-        const sfDoc = await transaction.get(sfDocRef);
-        if (!sfDoc.exists()) {
-          throw new Error("Documento no existe!");
-        }
-        const newStock = sfDoc.data().stock + amountToAdd;
-        transaction.update(sfDocRef, { stock: newStock });
+      const sfDocRef = doc(db, COLLECTION_INGREDIENTS, ingredientId);
+      const sfDoc = await transaction.get(sfDocRef);
+      if (!sfDoc.exists()) {
+        throw new Error("Documento no existe!");
+      }
+      const newStock = sfDoc.data().stock + amountToAdd;
+      transaction.update(sfDocRef, { stock: newStock });
     });
   } catch (e) {
     console.error("Error adding stock:", e);
@@ -626,56 +648,56 @@ export const addProduct = async (productData: Omit<Product, 'id'>) => {
 
 // --- Seeding Data ---
 export const seedDatabase = async () => {
-    const batch = writeBatch(db);
+  const batch = writeBatch(db);
 
-    // 1. Create Ingredients
-    const coffeeRef = doc(collection(db, COLLECTION_INGREDIENTS));
-    batch.set(coffeeRef, { nombre: "Café en Grano", unidad: "gr", stock: 5000, stockMinimo: 1000, costoPorUnidad: 15 }); // 15 CLP per gram
+  // 1. Create Ingredients
+  const coffeeRef = doc(collection(db, COLLECTION_INGREDIENTS));
+  batch.set(coffeeRef, { nombre: "Café en Grano", unidad: "gr", stock: 5000, stockMinimo: 1000, costoPorUnidad: 15 }); // 15 CLP per gram
 
-    const milkRef = doc(collection(db, COLLECTION_INGREDIENTS));
-    batch.set(milkRef, { nombre: "Leche Entera", unidad: "ml", stock: 10000, stockMinimo: 2000, costoPorUnidad: 1.2 }); // 1200 CLP per liter
-    
-    const sugarRef = doc(collection(db, COLLECTION_INGREDIENTS));
-    batch.set(sugarRef, { nombre: "Azúcar", unidad: "gr", stock: 2000, stockMinimo: 500, costoPorUnidad: 1 });
+  const milkRef = doc(collection(db, COLLECTION_INGREDIENTS));
+  batch.set(milkRef, { nombre: "Leche Entera", unidad: "ml", stock: 10000, stockMinimo: 2000, costoPorUnidad: 1.2 }); // 1200 CLP per liter
 
-    const cupRef = doc(collection(db, COLLECTION_INGREDIENTS));
-    batch.set(cupRef, { nombre: "Vaso Desechable", unidad: "unid", stock: 100, stockMinimo: 50, costoPorUnidad: 50 });
+  const sugarRef = doc(collection(db, COLLECTION_INGREDIENTS));
+  batch.set(sugarRef, { nombre: "Azúcar", unidad: "gr", stock: 2000, stockMinimo: 500, costoPorUnidad: 1 });
 
-    // 2. Create Products
-    const prod1Ref = doc(collection(db, COLLECTION_PRODUCTS));
-    batch.set(prod1Ref, {
-        nombre: "Espresso",
-        precio: 2000, 
-        imagen_url: "https://picsum.photos/id/1060/200/200",
-        givesStamp: true, // New stamp logic
-        receta: [
-            { idInsumo: coffeeRef.id, cantidadRequerida: 18 }, 
-            { idInsumo: cupRef.id, cantidadRequerida: 1 }
-        ]
-    });
+  const cupRef = doc(collection(db, COLLECTION_INGREDIENTS));
+  batch.set(cupRef, { nombre: "Vaso Desechable", unidad: "unid", stock: 100, stockMinimo: 50, costoPorUnidad: 50 });
 
-    const prod2Ref = doc(collection(db, COLLECTION_PRODUCTS));
-    batch.set(prod2Ref, {
-        nombre: "Latte",
-        precio: 3500,
-        imagen_url: "https://picsum.photos/id/63/200/200",
-        givesStamp: true, // New stamp logic
-        receta: [
-            { idInsumo: coffeeRef.id, cantidadRequerida: 18 },
-            { idInsumo: milkRef.id, cantidadRequerida: 200 }, 
-            { idInsumo: cupRef.id, cantidadRequerida: 1 }
-        ]
-    });
+  // 2. Create Products
+  const prod1Ref = doc(collection(db, COLLECTION_PRODUCTS));
+  batch.set(prod1Ref, {
+    nombre: "Espresso",
+    precio: 2000,
+    imagen_url: "https://picsum.photos/id/1060/200/200",
+    givesStamp: true, // New stamp logic
+    receta: [
+      { idInsumo: coffeeRef.id, cantidadRequerida: 18 },
+      { idInsumo: cupRef.id, cantidadRequerida: 1 }
+    ]
+  });
 
-    const prod3Ref = doc(collection(db, COLLECTION_PRODUCTS));
-    batch.set(prod3Ref, {
-        nombre: "Galleta Avena",
-        precio: 1500,
-        imagen_url: "https://picsum.photos/id/100/200/200",
-        givesStamp: false, // Food does not give stamps
-        receta: [],
-        costoCompra: 600
-    });
-    
-    await batch.commit();
+  const prod2Ref = doc(collection(db, COLLECTION_PRODUCTS));
+  batch.set(prod2Ref, {
+    nombre: "Latte",
+    precio: 3500,
+    imagen_url: "https://picsum.photos/id/63/200/200",
+    givesStamp: true, // New stamp logic
+    receta: [
+      { idInsumo: coffeeRef.id, cantidadRequerida: 18 },
+      { idInsumo: milkRef.id, cantidadRequerida: 200 },
+      { idInsumo: cupRef.id, cantidadRequerida: 1 }
+    ]
+  });
+
+  const prod3Ref = doc(collection(db, COLLECTION_PRODUCTS));
+  batch.set(prod3Ref, {
+    nombre: "Galleta Avena",
+    precio: 1500,
+    imagen_url: "https://picsum.photos/id/100/200/200",
+    givesStamp: false, // Food does not give stamps
+    receta: [],
+    costoCompra: 600
+  });
+
+  await batch.commit();
 };

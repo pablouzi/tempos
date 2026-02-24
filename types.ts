@@ -68,15 +68,15 @@ export interface Sale {
   pointsEarned?: number; // Kept for legacy compatibility
   stampsEarned?: number; // New: Stamps earned in this sale
   stampsSpent?: number; // New: Stamps used in this sale
-  
+
   status?: SaleStatus;
   voidReason?: string;
   voidRequestedBy?: string; // User email/id who requested
   voidProcessedBy?: string; // Admin email/id who approved/rejected
-  
+
   weatherSnapshot?: WeatherSnapshot; // New: Weather at time of sale
   costoTotal?: number; // New: COGS (Cost of Goods Sold) for this transaction
-  
+
   // Payment Details
   paymentMethod?: PaymentMethod;
   amountReceived?: number; // Solo si es efectivo
@@ -105,6 +105,8 @@ export interface Customer {
   points: number; // Legacy, kept for compatibility or secondary system
   stamps: number; // New: Current stamp balance
   lastVisit: any; // Firestore Timestamp
+  totalPurchases?: number; // Total number of transactions
+  totalSpent?: number; // Total monetary amount spent
 }
 
 export interface LogEntry {

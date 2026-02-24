@@ -219,16 +219,16 @@ const DailySalesReport: React.FC = () => {
       {/* HEADER Y SELECTOR DE FECHA */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">Reporte de Ventas</h2>
-          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Análisis Inteligente</p>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">Reporte de Ventas</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">Análisis Inteligente</p>
         </div>
 
-        <div className="relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:border-blue-200 transition-all cursor-pointer">
+        <div className="relative flex items-center gap-4 bg-white dark:bg-brand-card p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm hover:border-blue-200 dark:hover:border-blue-500/30 transition-all cursor-pointer">
           <div className="flex items-center gap-3 pointer-events-none">
             <span className="text-xl">📅</span>
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha Auditoría</span>
-              <span className="text-blue-700 font-black text-sm">{selectedDate.split('-').reverse().join(' / ')}</span>
+              <span className="text-blue-700 dark:text-blue-400 font-black text-sm">{selectedDate.split('-').reverse().join(' / ')}</span>
             </div>
           </div>
           <input
@@ -269,10 +269,10 @@ const DailySalesReport: React.FC = () => {
 
       {/* TARJETAS DE TOTALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-[35px] shadow-sm border-l-8 border-brand-orange flex justify-between items-center">
+        <div className="bg-white dark:bg-brand-card p-8 rounded-[35px] shadow-sm border-l-8 border-brand-orange flex justify-between items-center">
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total del Día</p>
-            <h3 className="text-4xl font-black text-gray-800">{formatCurrency(processed.totalDia)}</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Total del Día</p>
+            <h3 className="text-4xl font-black text-gray-800 dark:text-white">{formatCurrency(processed.totalDia)}</h3>
           </div>
           <div className="text-4xl">💰</div>
         </div>
@@ -286,27 +286,27 @@ const DailySalesReport: React.FC = () => {
       </div>
       {/* KPIs Y SMART INSIGHTS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-brand-card p-6 rounded-[25px] shadow-sm border border-gray-100 dark:border-white/5">
           <p className="text-[10px] font-black text-gray-400 uppercase">Efectivo Hoy</p>
-          <h3 className="text-xl font-bold text-green-600">{formatCurrency(processed.dayTotals.cash)}</h3>
+          <h3 className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(processed.dayTotals.cash)}</h3>
         </div>
-        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-brand-card p-6 rounded-[25px] shadow-sm border border-gray-100 dark:border-white/5">
           <p className="text-[10px] font-black text-gray-400 uppercase">Tarjeta Hoy</p>
-          <h3 className="text-xl font-bold text-blue-600">{formatCurrency(processed.dayTotals.card)}</h3>
+          <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(processed.dayTotals.card)}</h3>
         </div>
-        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-brand-card p-6 rounded-[25px] shadow-sm border border-gray-100 dark:border-white/5">
           <p className="text-[10px] font-black text-gray-400 uppercase">Ticket Prom.</p>
-          <h3 className="text-xl font-bold text-gray-800">{formatCurrency(processed.ticket)}</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(processed.ticket)}</h3>
         </div>
-        <div className="bg-white p-6 rounded-[25px] shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-brand-card p-6 rounded-[25px] shadow-sm border border-gray-100 dark:border-white/5">
           <p className="text-[10px] font-black text-gray-400 uppercase">Hora Peak / Clima</p>
-          <h3 className="text-xl font-bold text-gray-800">{processed.peak}</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white">{processed.peak}</h3>
           <span className="text-[10px] text-blue-400 font-bold uppercase">{processed.weather.condition} ({processed.weather.temp}°C)</span>
         </div>
       </div>
       {/* GRÁFICO */}
-      <div className="bg-white p-8 rounded-[35px] shadow-sm border border-gray-50">
-        <h4 className="font-black text-gray-700 text-[11px] uppercase mb-6 tracking-widest flex items-center justify-between">
+      <div className="bg-white dark:bg-brand-card p-8 rounded-[35px] shadow-sm border border-gray-50 dark:border-white/5">
+        <h4 className="font-black text-gray-700 dark:text-gray-200 text-[11px] uppercase mb-6 tracking-widest flex items-center justify-between">
           <span>Ritmo de Ventas 🕒</span>
           <span className="text-gray-400 text-[9px]">Ingresos vs Cantidad de Transacciones</span>
         </h4>
@@ -358,14 +358,14 @@ const DailySalesReport: React.FC = () => {
       </div>
 
       {/* CONSEJOS AUTOMÁTICOS DE INVENTARIO */}
-      <div className="bg-[#f8fafc] rounded-[35px] p-8 shadow-sm border border-blue-50">
-        <h3 className="font-black text-gray-700 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+      <div className="bg-[#f8fafc] dark:bg-brand-dark/50 rounded-[35px] p-8 shadow-sm border border-blue-50 dark:border-white/5">
+        <h3 className="font-black text-gray-700 dark:text-gray-200 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
           💡 Acciones Recomendadas
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex gap-4 items-start bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <span className="bg-green-100 p-3 rounded-full flex items-center justify-center text-green-600">🚀</span>
-            <p className="text-sm text-gray-600">
+          <div className="flex gap-4 items-start bg-white dark:bg-brand-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
+            <span className="bg-green-100 dark:bg-green-900/40 p-3 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">🚀</span>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               {processed.top10.length > 0 ? (
                 <>Tu producto estrella hoy es el <b>{processed.top10[0].nombre}</b> ({processed.top10[0].cantidad} unidades). Asegura tu stock para mañana o crea una promoción (combo) con este producto para arrastrar ventas de otros artículos de menor salida.</>
               ) : (
@@ -373,9 +373,9 @@ const DailySalesReport: React.FC = () => {
               )}
             </p>
           </div>
-          <div className="flex gap-4 items-start bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <span className="bg-red-100 p-3 rounded-full flex items-center justify-center text-red-500">⚠️</span>
-            <p className="text-sm text-gray-600">
+          <div className="flex gap-4 items-start bg-white dark:bg-brand-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
+            <span className="bg-red-100 dark:bg-red-900/40 p-3 rounded-full flex items-center justify-center text-red-500 dark:text-red-400">⚠️</span>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               {processed.bottom10.length > 0 ? (
                 <><b>{processed.bottom10[0].nombre}</b> ha tenido muy bajo movimiento ({processed.bottom10[0].cantidad} un.). Si es perecible, considera una venta flash de última hora para evitar mermas o revisa si su exhibición es la adecuada.</>
               ) : (
@@ -390,16 +390,16 @@ const DailySalesReport: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Top 10 Mejores */}
-        <div className="bg-white rounded-[35px] shadow-sm border border-gray-50 overflow-hidden">
+        <div className="bg-white dark:bg-brand-card rounded-[35px] shadow-sm border border-gray-50 dark:border-white/5 overflow-hidden">
           <button
             onClick={() => setShowTop10(!showTop10)}
-            className="w-full px-8 py-6 flex justify-between items-center bg-green-50/50 hover:bg-green-50 transition-colors"
+            className="w-full px-8 py-6 flex justify-between items-center bg-green-50/50 dark:bg-green-900/20 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-green-100 p-2 rounded-full text-green-600">
+              <div className="bg-green-100 dark:bg-green-900/40 p-2 rounded-full text-green-600 dark:text-green-400">
                 <TrendingUp size={20} />
               </div>
-              <h4 className="font-black text-gray-700 text-sm uppercase tracking-widest">Top 10 Mejores Ventas</h4>
+              <h4 className="font-black text-gray-700 dark:text-gray-200 text-sm uppercase tracking-widest">Top 10 Mejores Ventas</h4>
             </div>
             <div className="text-gray-400">
               {showTop10 ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -413,14 +413,14 @@ const DailySalesReport: React.FC = () => {
                   <div className="text-center py-4 text-gray-400 text-xs">Sin datos hoy.</div>
                 ) : (
                   processed.top10.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0">
+                    <div key={idx} className="flex justify-between items-center border-b border-gray-50 dark:border-white/5 pb-2 last:border-0">
                       <div className="flex items-center gap-3">
-                        <span className={`text-xs font-black w-5 h-5 flex items-center justify-center rounded-full ${idx < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`text-xs font-black w-5 h-5 flex items-center justify-center rounded-full ${idx < 3 ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
                           {idx + 1}
                         </span>
-                        <span className="text-sm font-medium text-gray-700">{item.nombre}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{item.nombre}</span>
                       </div>
-                      <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">{item.cantidad} un.</span>
+                      <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">{item.cantidad} un.</span>
                     </div>
                   ))
                 )}
@@ -430,16 +430,16 @@ const DailySalesReport: React.FC = () => {
         </div>
 
         {/* Top 10 Peores */}
-        <div className="bg-white rounded-[35px] shadow-sm border border-gray-50 overflow-hidden">
+        <div className="bg-white dark:bg-brand-card rounded-[35px] shadow-sm border border-gray-50 dark:border-white/5 overflow-hidden">
           <button
             onClick={() => setShowBottom10(!showBottom10)}
-            className="w-full px-8 py-6 flex justify-between items-center bg-red-50/30 hover:bg-red-50/50 transition-colors"
+            className="w-full px-8 py-6 flex justify-between items-center bg-red-50/30 dark:bg-red-900/20 hover:bg-red-50/50 dark:hover:bg-red-900/40 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-red-100 p-2 rounded-full text-red-500">
+              <div className="bg-red-100 dark:bg-red-900/40 p-2 rounded-full text-red-500 dark:text-red-400">
                 <TrendingDown size={20} />
               </div>
-              <h4 className="font-black text-gray-700 text-sm uppercase tracking-widest">Top 10 Menos Vendidos</h4>
+              <h4 className="font-black text-gray-700 dark:text-gray-200 text-sm uppercase tracking-widest">Top 10 Menos Vendidos</h4>
             </div>
             <div className="text-gray-400">
               {showBottom10 ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -453,14 +453,14 @@ const DailySalesReport: React.FC = () => {
                   <div className="text-center py-4 text-gray-400 text-xs">Sin datos hoy.</div>
                 ) : (
                   processed.bottom10.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0">
+                    <div key={idx} className="flex justify-between items-center border-b border-gray-50 dark:border-white/5 pb-2 last:border-0">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-black w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                        <span className="text-xs font-black w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-400">
                           {idx + 1}
                         </span>
-                        <span className="text-sm font-medium text-gray-600">{item.nombre}</span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{item.nombre}</span>
                       </div>
-                      <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">{item.cantidad} un.</span>
+                      <span className="text-xs font-bold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">{item.cantidad} un.</span>
                     </div>
                   ))
                 )}
@@ -471,18 +471,18 @@ const DailySalesReport: React.FC = () => {
 
       </div>
       {/* TABLA DETALLE */}
-      <div className="bg-white rounded-[35px] shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-brand-card rounded-[35px] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
         <table className="min-w-full text-sm text-left">
-          <thead className="text-gray-400 bg-white border-b border-gray-100 uppercase text-[10px] font-black">
+          <thead className="text-gray-400 dark:text-gray-500 bg-white dark:bg-brand-card border-b border-gray-100 dark:border-white/5 uppercase text-[10px] font-black">
             <tr><th className="px-8 py-4">Hora</th><th className="px-8 py-4">Cliente</th><th className="px-8 py-4">Método</th><th className="px-8 py-4 text-right">Total</th></tr>
           </thead>
-          <tbody className="divide-y divide-gray-50 text-gray-600">
+          <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-600 dark:text-gray-400">
             {processed.daySales.map((s) => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-brand-dark transition-colors">
                 <td className="px-8 py-4 font-mono text-[11px]">{formatTime(s.fecha)}</td>
-                <td className="px-8 py-4 font-bold text-gray-800">{getCustomerName(s.customerId)}</td>
-                <td className="px-8 py-4"><span className="text-[9px] font-black uppercase text-gray-400 border px-2 py-0.5 rounded-full">{s.items.map(i => i.nombre)}</span></td>
-                <td className="px-8 py-4 text-right font-black text-gray-800">{formatCurrency(s.total)}</td>
+                <td className="px-8 py-4 font-bold text-gray-800 dark:text-white">{getCustomerName(s.customerId)}</td>
+                <td className="px-8 py-4"><span className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 border dark:border-white/10 px-2 py-0.5 rounded-full">{s.items.map(i => i.nombre)}</span></td>
+                <td className="px-8 py-4 text-right font-black text-gray-800 dark:text-white">{formatCurrency(s.total)}</td>
               </tr>
             ))}
           </tbody>

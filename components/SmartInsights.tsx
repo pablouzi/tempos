@@ -60,7 +60,7 @@ const SmartInsights: React.FC = () => {
           </div>
 
           {currentWeather ? (
-            <div className="flex items-center gap-4 bg-white/20 p-4 rounded-xl mt-4 md:mt-0 backdrop-blur-sm z-10">
+            <div className="flex items-center gap-4 bg-white/20 dark:bg-black/20 p-4 rounded-xl mt-4 md:mt-0 backdrop-blur-sm z-10">
               <span className="text-5xl">{getWeatherIcon(currentWeather.category)}</span>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-wider opacity-75">Ahora</p>
@@ -73,11 +73,11 @@ const SmartInsights: React.FC = () => {
           )}
 
           {/* Background Decoration */}
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-5 rounded-full z-0"></div>
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white dark:bg-black opacity-5 rounded-full z-0"></div>
         </div>
 
         {/* Tomorrow's Forecast & Recommendation Card */}
-        <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 flex flex-col justify-between relative overflow-hidden group">
+        <div className="bg-white dark:bg-brand-card rounded-2xl p-6 shadow-md border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
@@ -86,21 +86,21 @@ const SmartInsights: React.FC = () => {
             <>
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pronóstico Mañana</p>
-                  <h3 className="text-xl font-bold text-gray-800">{prediction.tomorrowDay}</h3>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Pronóstico Mañana</p>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">{prediction.tomorrowDay}</h3>
                 </div>
                 <div className="text-right">
                   <span className="text-2xl">{getWeatherIcon(tomorrowWeather.category)}</span>
-                  <span className="block text-sm font-bold text-gray-600">{tomorrowWeather.temp}°C</span>
+                  <span className="block text-sm font-bold text-gray-600 dark:text-gray-300">{tomorrowWeather.temp}°C</span>
                 </div>
               </div>
 
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-900 mb-2">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30 text-sm text-blue-900 dark:text-blue-300 mb-2">
                 Se prevé clima <b>{prediction.tomorrowCondition.toLowerCase()}</b>.
                 Históricamente, la venta de <b>{prediction.recommendedProduct}</b> sube un <b>{prediction.increasePercentage}%</b>.
               </div>
 
-              <p className="text-xs text-gray-500 italic">
+              <p className="text-xs text-gray-500 dark:text-gray-400 italic">
                 💡 Sugerencia: {prediction.tip}
               </p>
             </>
@@ -115,16 +115,16 @@ const SmartInsights: React.FC = () => {
       {/* Recommended Actions (Quick Alerts) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {insights.map((insight, idx) => (
-          <div key={idx} className={`rounded-xl p-5 border-l-4 shadow-sm flex gap-4 items-start bg-white
+          <div key={idx} className={`rounded-xl p-5 border-l-4 shadow-sm flex gap-4 items-start bg-white dark:bg-brand-card
             ${insight.type === 'promo' ? 'border-green-500' :
               insight.type === 'alert' ? 'border-orange-500' : 'border-blue-500'}`}>
-            <div className="text-3xl bg-gray-50 p-2 rounded-lg">{insight.icon}</div>
+            <div className="text-3xl bg-gray-50 dark:bg-white/5 p-2 rounded-lg">{insight.icon}</div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
                 {insight.type === 'promo' ? 'Oportunidad' :
                   insight.type === 'alert' ? 'Atención' : 'Gestión'}
               </p>
-              <p className="text-gray-800 font-medium leading-snug">{insight.message}</p>
+              <p className="text-gray-800 dark:text-gray-200 font-medium leading-snug">{insight.message}</p>
             </div>
           </div>
         ))}

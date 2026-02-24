@@ -113,70 +113,70 @@ const FinancialDashboard: React.FC = () => {
             {/* Main KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Revenue */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Ventas Brutas</p>
-                    <h3 className="text-3xl font-bold text-gray-800">{formatCurrency(stats.grossSales)}</h3>
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-2">Ventas Brutas</p>
+                    <h3 className="text-3xl font-bold text-gray-800 dark:text-white">{formatCurrency(stats.grossSales)}</h3>
                 </div>
 
                 {/* Cost (CMV) */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Costo de Venta (CMV)</p>
-                    <h3 className="text-3xl font-bold text-red-600">-{formatCurrency(stats.totalCost)}</h3>
-                    <p className="text-xs text-gray-400 mt-2">Insumos + Productos Externos</p>
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-2">Costo de Venta (CMV)</p>
+                    <h3 className="text-3xl font-bold text-red-600 dark:text-red-400">-{formatCurrency(stats.totalCost)}</h3>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Insumos + Productos Externos</p>
                 </div>
 
                 {/* Net Profit */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Utilidad Neta</p>
-                    <h3 className="text-3xl font-bold text-green-600">{formatCurrency(stats.netProfit)}</h3>
-                    <div className="w-full bg-gray-200 h-1.5 mt-3 rounded-full overflow-hidden">
-                        <div className="bg-green-500 h-full" style={{ width: `${stats.margin}%` }}></div>
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5">
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-2">Utilidad Neta</p>
+                    <h3 className="text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.netProfit)}</h3>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 mt-3 rounded-full overflow-hidden">
+                        <div className="bg-green-500 dark:bg-green-400 h-full" style={{ width: `${stats.margin}%` }}></div>
                     </div>
                 </div>
 
                 {/* Margin % */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center">
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex flex-col justify-center items-center">
                     <div className="relative h-24 w-24 flex items-center justify-center">
                         <svg className="h-full w-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path className="text-gray-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                            <path className={`${stats.margin > 50 ? 'text-green-500' : stats.margin > 30 ? 'text-yellow-500' : 'text-red-500'}`} strokeDasharray={`${stats.margin}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                            <path className="text-gray-100 dark:text-gray-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                            <path className={`${stats.margin > 50 ? 'text-green-500 dark:text-green-400' : stats.margin > 30 ? 'text-yellow-500 dark:text-yellow-400' : 'text-red-500 dark:text-red-400'}`} strokeDasharray={`${stats.margin}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                         </svg>
-                        <span className="absolute text-xl font-bold text-gray-700">{Math.round(stats.margin)}%</span>
+                        <span className="absolute text-xl font-bold text-gray-700 dark:text-gray-200">{Math.round(stats.margin)}%</span>
                     </div>
-                    <p className="text-sm font-bold text-gray-400 mt-2">Margen Global</p>
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-400 mt-2">Margen Global</p>
                 </div>
             </div>
 
             {/* Profitability Ranking */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="font-bold text-xl text-gray-800 mb-6 flex items-center gap-2">
+                <div className="lg:col-span-2 bg-white dark:bg-brand-card rounded-2xl shadow-sm border border-gray-200 dark:border-white/5 p-6">
+                    <h3 className="font-bold text-xl text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                         🏆 Top Productos por Rentabilidad
-                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">(Donde más ganas dinero real)</span>
+                        <span className="text-xs font-normal text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-black/20 px-2 py-1 rounded-full">(Donde más ganas dinero real)</span>
                     </h3>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-left text-gray-400 border-b border-gray-100">
+                                <tr className="text-left text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-white/5">
                                     <th className="pb-3 font-normal">Producto</th>
                                     <th className="pb-3 font-normal text-right">Venta Total</th>
                                     <th className="pb-3 font-normal text-right">Costo Est.</th>
-                                    <th className="pb-3 font-normal text-right text-green-700">Utilidad</th>
+                                    <th className="pb-3 font-normal text-right text-green-700 dark:text-green-500">Utilidad</th>
                                     <th className="pb-3 font-normal text-right">Margen</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50">
+                            <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                                 {stats.ranking.slice(0, 8).map((prod, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 group transition-colors">
-                                        <td className="py-3 font-medium text-gray-800 flex items-center gap-2">
-                                            <span className="text-gray-300 w-4">{idx + 1}.</span> {prod.name}
+                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5 group transition-colors">
+                                        <td className="py-3 font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                            <span className="text-gray-300 dark:text-gray-600 w-4">{idx + 1}.</span> {prod.name}
                                         </td>
-                                        <td className="py-3 text-right text-gray-600">{formatCurrency(prod.revenue)}</td>
-                                        <td className="py-3 text-right text-gray-400">{formatCurrency(prod.cost)}</td>
-                                        <td className="py-3 text-right font-bold text-green-600">{formatCurrency(prod.profit)}</td>
+                                        <td className="py-3 text-right text-gray-600 dark:text-gray-400">{formatCurrency(prod.revenue)}</td>
+                                        <td className="py-3 text-right text-gray-400 dark:text-gray-500">{formatCurrency(prod.cost)}</td>
+                                        <td className="py-3 text-right font-bold text-green-600 dark:text-green-400">{formatCurrency(prod.profit)}</td>
                                         <td className="py-3 text-right">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${prod.margin > 60 ? 'bg-green-100 text-green-800' : prod.margin > 30 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${prod.margin > 60 ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400' : prod.margin > 30 ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400' : 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-400'}`}>
                                                 {Math.round(prod.margin)}%
                                             </span>
                                         </td>
@@ -187,11 +187,11 @@ const FinancialDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                    <h3 className="font-bold text-gray-800 mb-4">Consejos Financieros</h3>
-                    <ul className="space-y-4 text-sm text-gray-600">
+                <div className="bg-gray-50 dark:bg-brand-card rounded-2xl p-6 border border-gray-200 dark:border-white/5">
+                    <h3 className="font-bold text-gray-800 dark:text-white mb-4">Consejos Financieros</h3>
+                    <ul className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
                         <li className="flex gap-3">
-                            <span className="bg-white p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-green-600">💡</span>
+                            <span className="bg-white dark:bg-white/10 p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-green-600 dark:text-green-400">💡</span>
                             <p>
                                 <b>Analista TEMPOS informa:</b><br />
                                 {stats.margin < 10 && stats.grossSales > 0 ? (
@@ -206,7 +206,7 @@ const FinancialDashboard: React.FC = () => {
                             </p>
                         </li>
                         <li className="flex gap-3">
-                            <span className="bg-white p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-blue-600">📉</span>
+                            <span className="bg-white dark:bg-white/10 p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-blue-600 dark:text-blue-400">📉</span>
                             <p>
                                 {stats.grossSales > 0 ? (
                                     (stats.totalCost / stats.grossSales) * 100 > 35 ? (
@@ -220,7 +220,7 @@ const FinancialDashboard: React.FC = () => {
                             </p>
                         </li>
                         <li className="flex gap-3">
-                            <span className="bg-white p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-yellow-600">⚖️</span>
+                            <span className="bg-white dark:bg-white/10 p-2 h-8 w-8 rounded-full shadow-sm flex items-center justify-center text-yellow-600 dark:text-yellow-400">⚖️</span>
                             <p>
                                 Identifica tus 5 artículos estrella y asegúrate de que nunca falten en stock.
                                 {stats.ranking.length > 0 && stats.ranking[0].margin > 0 ? (
