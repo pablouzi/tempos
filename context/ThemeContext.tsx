@@ -52,17 +52,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 2. Apply Colors
     root.style.setProperty('--primary-color', settings.primaryColor);
-    // In dark mode, we ignore the light background variable and let Tailwind handle it via dark: classes,
-    // or we could swap it here. For this implementation, we use Tailwind utility classes.
-    root.style.setProperty('--primary-bg', settings.backgroundColor);
-    root.style.setProperty('--card-bg', settings.cardBackgroundColor); // Nueva conexión
+
     // 3. Apply Radius
     root.style.setProperty('--radius-global', settings.borderRadius);
 
     // 4. Apply Base Scale (Font Size)
     const compactMultiplier = settings.isCompact ? 0.85 : 1;
     const finalScale = settings.baseFontSize * compactMultiplier;
-    
+
     root.style.setProperty('--base-scale', `${finalScale}%`);
 
     // 5. Toggle Body Class for Compact Mode
@@ -97,7 +94,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateSettings({
           primaryColor: '#3b82f6', // Blue 500 for contrast
           backgroundColor: '#111827', // Gray 900
-          borderRadius: '0.5rem', 
+          borderRadius: '0.5rem',
           posColumns: 5, // 5 columnas para el look Clásico
           isDarkMode: true
         });
