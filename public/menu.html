@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Tempos</title>
+    <!-- Tailwind CSS (CDN for standalone file) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAF6ED;
+        }
+
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <!-- Firebase App (the core Firebase SDK) - Version 8 for maximum legacy compatibility -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+
+<body class="text-[#2c4133] antialiased min-h-screen pb-10">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <!-- Optional Logo & Header -->
+        <div class="flex flex-col items-center justify-center mb-10">
+            <h1 class="text-3xl font-extrabold tracking-tight text-[#2c4133]">NUESTRA <span
+                    class="text-[#eb5c27]">CARTA</span></h1>
+            <p class="text-gray-500 text-sm mt-1">Descubre nuestros deliciosos productos.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="flex flex-col justify-center items-center h-64">
+            <svg class="animate-spin h-8 w-8 text-[#eb5c27] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <p class="text-lg text-gray-500 font-medium animate-pulse">Cargando la carta...</p>
+        </div>
+
+        <!-- Menu Container (hidden until loaded) -->
+        <div id="menu-container" class="flex flex-col gap-12 mt-8 md:px-4 hidden">
+            <!-- Categories will be rendered here dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // 1. Initialize Firebase (Using credentials from firebaseConfig.ts)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPV_aP2d62JlfwyAZdJxIlMSRc-rGDMpI",
+            authDomain: "cafestore-ffbec.firebaseapp.com",
+            projectId: "cafestore-ffbec",
+            storageBucket: "cafestore-ffbec.firebasestorage.app",
+            messagingSenderId: "1096912643765",
+            appId: "1:1096912643765:web:16f929994f508002d300fc",
+            measurementId: "G-HYK99RRJ2Q"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Helpers
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+        };
+
+        // DOM Elements
+        const loadingEl = document.getElementById('loading');
+        const containerEl = document.getElementById('menu-container');
+
+        // Fetch Products Data
+        async function loadMenu() {
+            try {
+                // Autenticación anónima para poder leer la base de datos sin cambiar las reglas globales de seguridad
+
+                // Fetch all products
+                const snapshot = await db.collection('productos').get();
+                let products = [];
+                snapshot.forEach(doc => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Group by Category
+                const grouped = products.reduce((acc, product) => {
+                    const cat = product.category || 'General';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(product);
+                    return acc;
+                }, {});
+
+                // Sort Categories by number of products (descending)
+                const sortedCategories = Object.entries(grouped).sort((a, b) => {
+                    // a y b son arrays de la forma: ['NombreCategoria', [producto1, producto2, ...]]
+                    // a[1].length es la cantidad de productos en la categoría A
+                    return b[1].length - a[1].length;
+                });
+
+                renderMenu(sortedCategories);
+
+                // Hide loader, show menu
+                loadingEl.classList.add('hidden');
+                containerEl.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error cargando menú: ", error);
+                loadingEl.innerHTML = '<p class="text-red-500 font-bold">Error al cargar el menú. Por favor, revise su conexión a internet.</p>';
+            }
+        }
+
+        // Render HTML
+        function renderMenu(categories) {
+            let html = '';
+
+            categories.forEach(([category, items]) => {
+
+                // Determine Category Icon
+                let iconHtml = '';
+                if (category.toLowerCase().includes('caf')) {
+                    iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#eb5c27]"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>`;
+                } else {
+                    iconHtml = `<div class="w-7 h-7 flex items-center justify-center text-[#eb5c27] font-bold border-2 border-[#eb5c27] rounded-md text-sm">${category.charAt(0).toUpperCase()}</div>`;
+                }
+
+                // Map Products in Category
+                let productsHtml = items.map(product => {
+                    const isOutOfStock = product.isInventoryTracked && product.stock <= 0;
+                    const opacityClass = isOutOfStock ? 'opacity-50' : '';
+
+                    return `
+                        <div class="flex flex-col group pb-2 border-b border-gray-100 last:border-0 md:last:border-b md:[&:nth-last-child(2)]:border-0">
+                            <div class="flex items-baseline w-full">
+                                <h3 class="font-bold text-sm2 text-[#2c4133]  whitespace-nowrap pr-2 ${opacityClass}">
+                                    ${product.nombre}
+                                </h3>
+                                <div class="flex-grow border-b-2 border-dotted border-gray-300 mx-2 self-center relative top-[-4px]"></div>
+                                <span class="font-bold text-lg text-[#eb5c27] bg-[#fff] rounded-full pl-5 pr-5 py-0.5 whitespace-nowrap  ${opacityClass}">
+                                    ${formatCurrency(product.precio)}
+                                </span>
+                            </div>
+                            ${product.descripcion ? `<p class="text-gray-500 text-sm mt-1 mb-1 leading-relaxed max-w-[85%] ${opacityClass}">${product.descripcion}</p>` : ''}
+                            ${isOutOfStock ? `<span class="text-red-500 text-xs font-bold mt-1 uppercase tracking-wide">Agotado</span>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                // Append Category Block
+                html += `
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-3 mb-6">
+                            ${iconHtml}
+                            <h2 class="text-2xl font-extrabold text-[#2c4133]">${category}</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-1">
+                            ${productsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            containerEl.innerHTML = html;
+        }
+
+        // Execute on load
+        loadMenu();
+    </script>
+</body>
+
+</html>

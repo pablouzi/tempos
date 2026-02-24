@@ -49,12 +49,14 @@ import DailySalesReport from './components/DailySalesReport';
 import AdminTelemetry from './components/AdminTelemetry';
 import ThemeSettings from './components/ThemeSettings';
 import PendingOrdersModal from './components/PendingOrdersModal'; // Imported Modal
+import CustomerMenu from './components/CustomerMenu';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 enum View {
     POS = 'POS',
+    CUSTOMER_MENU = 'CUSTOMER_MENU',
     ADMIN = 'ADMIN',
     INVENTORY = 'INVENTORY',
     ADD_PRODUCT = 'ADD_PRODUCT',
@@ -99,6 +101,7 @@ const MainContent: React.FC = () => {
     const [activeSession, setActiveSession] = useState<CashSession | null>(null);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<'open' | 'close'>('open');
+    const [exitClickCount, setExitClickCount] = useState({ count: 0, lastClick: 0 });
 
     // --- Pending Orders State ---
     const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
@@ -532,6 +535,21 @@ const MainContent: React.FC = () => {
         setIsCartOpen(false);
     };
 
+    const handleExitKiosk = () => {
+        const now = Date.now();
+        if (now - exitClickCount.lastClick > 2000) {
+            setExitClickCount({ count: 1, lastClick: now });
+        } else {
+            const newCount = exitClickCount.count + 1;
+            if (newCount >= 5) {
+                handleNavClick(View.POS);
+                setExitClickCount({ count: 0, lastClick: 0 });
+            } else {
+                setExitClickCount({ count: newCount, lastClick: now });
+            }
+        }
+    };
+
     // --- LAYOUT COMPONENTS ---
 
     const NavItem = ({ view, label, icon: Icon, badge }: { view: View, label: string, icon: LucideIcon, badge?: number }) => {
@@ -569,148 +587,163 @@ const MainContent: React.FC = () => {
             ) : (
                 <>
                     {/* COLUMN 1: LEFT SIDEBAR */}
-                    <aside className={`bg-[var(--sidebar-bg)] flex flex-col h-full flex-shrink-0 z-30 shadow-xl transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
+                    {currentView !== View.CUSTOMER_MENU && (
+                        <aside className={`bg-[var(--sidebar-bg)] flex flex-col h-full flex-shrink-0 z-30 shadow-xl transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
 
-                        {/* Logo & Toggle Area */}
-                        <div className={`h-20 flex items-center px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="flex items-center justify-center py-4">
-                                    <img
-                                        src={logoTempos}
-                                        alt="TEMPOS"
-                                        className="h-12 w-auto object-contain" /* Un tamaño más discreto para el menú */
-                                    />
+                            {/* Logo & Toggle Area */}
+                            <div className={`h-20 flex items-center px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="flex items-center justify-center py-4">
+                                        <img
+                                            src={logoTempos}
+                                            alt="TEMPOS"
+                                            className="h-12 w-auto object-contain" /* Un tamaño más discreto para el menú */
+                                        />
+                                    </div>
+                                    <h1 className={`text-white font-bold text-xl tracking-tight whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                                        TEMPOS
+                                    </h1>
                                 </div>
-                                <h1 className={`text-white font-bold text-xl tracking-tight whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-                                    TEMPOS
-                                </h1>
-                            </div>
 
-                            {/* Toggle Button (Hidden if collapsed, uses absolute positioning to float on edge if needed, or inside header) */}
-                            <button
-                                onClick={() => setIsCollapsed(!isCollapsed)}
-                                className={`text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'hidden' : 'block'}`}
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                        </div>
-
-                        {/* Explicit Collapsed Toggle Button (Centered when collapsed) */}
-                        {isCollapsed && (
-                            <div className="flex justify-center pb-4">
-                                <button onClick={() => setIsCollapsed(false)} className="text-gray-500 hover:text-white">
-                                    <ChevronRight size={20} />
+                                {/* Toggle Button (Hidden if collapsed, uses absolute positioning to float on edge if needed, or inside header) */}
+                                <button
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+                                    className={`text-gray-400 hover:text-white transition-colors ${isCollapsed ? 'hidden' : 'block'}`}
+                                >
+                                    <ChevronLeft size={20} />
                                 </button>
                             </div>
-                        )}
 
-                        {/* Navigation */}
-                        <nav className="flex-1 px-1 py-4 space-y-1 overflow-y-auto scrollbar-hide">
-                            <NavItem view={View.POS} label="Productos" icon={LayoutGrid} />
+                            {/* Explicit Collapsed Toggle Button (Centered when collapsed) */}
+                            {isCollapsed && (
+                                <div className="flex justify-center pb-4">
+                                    <button onClick={() => setIsCollapsed(false)} className="text-gray-500 hover:text-white">
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            )}
 
-                            {/* Pending Orders Button (Custom) */}
-                            <button
-                                onClick={() => setIsPendingOrdersModalOpen(true)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 group rounded-lg mb-1 relative text-gray-400 hover:text-white hover:bg-white/5
+                            {/* Navigation */}
+                            <nav className="flex-1 px-1 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+                                <NavItem view={View.POS} label="Caja (POS)" icon={LayoutGrid} />
+
+
+                                {/* Pending Orders Button (Custom) */}
+                                <button
+                                    onClick={() => setIsPendingOrdersModalOpen(true)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 group rounded-lg mb-1 relative text-gray-400 hover:text-white hover:bg-white/5
                             ${isCollapsed ? 'justify-center' : 'justify-start'}
                             `}
-                                title={isCollapsed ? 'Pedidos Pendientes' : ''}
-                            >
-                                <Clock size={22} strokeWidth={2} className="text-orange-400" />
-                                <span className={`font-semibold text-sm whitespace-nowrap overflow-hidden transition-all duration-300 text-orange-100 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-                                    Pendientes
-                                </span>
-                                {pendingOrders.length > 0 && (
-                                    <span className={`absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${isCollapsed ? 'top-1 right-1' : ''}`}>
-                                        {pendingOrders.length}
+                                    title={isCollapsed ? 'Pedidos Pendientes' : ''}
+                                >
+                                    <Clock size={22} strokeWidth={2} className="text-orange-400" />
+                                    <span className={`font-semibold text-sm whitespace-nowrap overflow-hidden transition-all duration-300 text-orange-100 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                                        Pendientes
                                     </span>
+                                    {pendingOrders.length > 0 && (
+                                        <span className={`absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${isCollapsed ? 'top-1 right-1' : ''}`}>
+                                            {pendingOrders.length}
+                                        </span>
+                                    )}
+                                </button>
+
+                                <NavItem view={View.SALES_HISTORY} label="Historial Ventas" icon={ShoppingBag} />
+                                <NavItem view={View.CUSTOMER_MENU} label="Carta Menú" icon={Coffee} />
+                                {userRole === 'admin' && (
+                                    <>
+                                        <div className={`my-4 border-t border-white/10 ${isCollapsed ? 'mx-2' : 'mx-4'}`}></div>
+
+                                        {!isCollapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Administración</p>}
+
+                                        <NavItem view={View.CUSTOMERS} label="Clientes" icon={Users} />
+                                        <NavItem view={View.ADMIN} label="Productos" icon={Package} />
+                                        <NavItem view={View.INVENTORY} label="Insumos" icon={Package} />
+
+                                        <div className={`my-4 border-t border-white/10 ${isCollapsed ? 'mx-2' : 'mx-4'}`}></div>
+
+                                        {!isCollapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Finanzas</p>}
+
+                                        <NavItem view={View.DAILY_REPORT} label="CafeinAi" icon={FileText} />
+                                        <NavItem view={View.INSIGHTS} label="Pronóstico Semanal" icon={Activity} />
+                                        <NavItem view={View.FINANCE} label="Rentabilidad" icon={PieChart} />
+                                        <NavItem view={View.TELEMETRY} label="Sistema Logs" icon={BarChart3} />
+                                    </>
                                 )}
-                            </button>
 
-                            <NavItem view={View.SALES_HISTORY} label="Historial Ventas" icon={ShoppingBag} />
+                            </nav>
 
-                            {userRole === 'admin' && (
-                                <>
-                                    <div className={`my-4 border-t border-white/10 ${isCollapsed ? 'mx-2' : 'mx-4'}`}></div>
-
-                                    {!isCollapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Administración</p>}
-
-                                    <NavItem view={View.CUSTOMERS} label="Clientes" icon={Users} />
-                                    <NavItem view={View.ADMIN} label="Productos" icon={Package} />
-                                    <NavItem view={View.INVENTORY} label="Insumos" icon={Package} />
-
-                                    <div className={`my-4 border-t border-white/10 ${isCollapsed ? 'mx-2' : 'mx-4'}`}></div>
-
-                                    {!isCollapsed && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Finanzas</p>}
-
-                                    <NavItem view={View.DAILY_REPORT} label="CafeinAi" icon={FileText} />
-                                    <NavItem view={View.INSIGHTS} label="Pronóstico Semanal" icon={Activity} />
-                                    <NavItem view={View.FINANCE} label="Rentabilidad" icon={PieChart} />
-                                    <NavItem view={View.TELEMETRY} label="Sistema Logs" icon={BarChart3} />
-                                </>
-                            )}
-                        </nav>
-
-                        {/* Cash Register Action */}
-                        <div className="px-3 pb-4 pt-2">
-                            <button
-                                onClick={() => {
-                                    if (!activeSession) {
-                                        setCashModalMode('open');
-                                        setIsCashModalOpen(true);
-                                    } else {
-                                        handleCloseRegister();
-                                    }
-                                }}
-                                className={`w-full py-3 rounded-xl font-bold text-sm shadow-lg transition-all transform active:scale-95 flex items-center gap-3 overflow-hidden
+                            {/* Cash Register Action */}
+                            <div className="px-3 pb-4 pt-2">
+                                <button
+                                    onClick={() => {
+                                        if (!activeSession) {
+                                            setCashModalMode('open');
+                                            setIsCashModalOpen(true);
+                                        } else {
+                                            handleCloseRegister();
+                                        }
+                                    }}
+                                    className={`w-full py-3 rounded-xl font-bold text-sm shadow-lg transition-all transform active:scale-95 flex items-center gap-3 overflow-hidden
                                 ${activeSession
-                                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20'
-                                        : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'}
+                                            ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20'
+                                            : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'}
                                 ${isCollapsed ? 'justify-center px-0' : 'justify-center px-4'}
                                 `}
-                                title={activeSession ? 'Cerrar Caja' : 'Abrir Caja'}
-                            >
-                                {activeSession ? <Lock size={20} /> : <Unlock size={20} />}
-                                <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'}`}>
-                                    {activeSession ? 'Cerrar Caja' : 'Abrir Caja'}
-                                </span>
-                            </button>
-                        </div>
-
-                        {/* Bottom User Area */}
-                        <div className="p-4 border-t border-white/10 bg-black/20">
-                            <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-                                <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-inner">
-                                    {user.email?.[0].toUpperCase()}
-                                </div>
-                                <div className={`overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-                                    <p className="text-white text-xs font-medium truncate w-32">{user.email}</p>
-                                    <p className="text-gray-400 text-[10px] uppercase">{userRole === 'admin' ? 'Manager' : 'Staff'}</p>
-                                </div>
-                            </div>
-
-                            <div className={`flex items-center gap-2 mt-3 ${isCollapsed ? 'flex-col' : 'flex-row'}`}>
-                                <button
-                                    onClick={() => setIsThemeSettingsOpen(true)}
-                                    className="p-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-                                    title="Configuración"
+                                    title={activeSession ? 'Cerrar Caja' : 'Abrir Caja'}
                                 >
-                                    <Settings size={18} />
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className={`flex-grow py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-900/50 hover:text-red-200 text-xs font-bold transition-colors flex items-center justify-center gap-2 ${isCollapsed ? 'w-full' : ''}`}
-                                    title="Salir"
-                                >
-                                    <LogOut size={18} />
-                                    {!isCollapsed && <span>Salir</span>}
+                                    {activeSession ? <Lock size={20} /> : <Unlock size={20} />}
+                                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'}`}>
+                                        {activeSession ? 'Cerrar Caja' : 'Abrir Caja'}
+                                    </span>
                                 </button>
                             </div>
-                        </div>
-                    </aside>
+
+                            {/* Bottom User Area */}
+                            <div className="p-4 border-t border-white/10 bg-black/20">
+                                <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+                                    <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-inner">
+                                        {user.email?.[0].toUpperCase()}
+                                    </div>
+                                    <div className={`overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                                        <p className="text-white text-xs font-medium truncate w-32">{user.email}</p>
+                                        <p className="text-gray-400 text-[10px] uppercase">{userRole === 'admin' ? 'Manager' : 'Staff'}</p>
+                                    </div>
+                                </div>
+
+                                <div className={`flex items-center gap-2 mt-3 ${isCollapsed ? 'flex-col' : 'flex-row'}`}>
+                                    <button
+                                        onClick={() => setIsThemeSettingsOpen(true)}
+                                        className="p-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
+                                        title="Configuración"
+                                    >
+                                        <Settings size={18} />
+                                    </button>
+                                    <button
+                                        onClick={handleLogout}
+                                        className={`flex-grow py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-red-900/50 hover:text-red-200 text-xs font-bold transition-colors flex items-center justify-center gap-2 ${isCollapsed ? 'w-full' : ''}`}
+                                        title="Salir"
+                                    >
+                                        <LogOut size={18} />
+                                        {!isCollapsed && <span>Salir</span>}
+                                    </button>
+                                </div>
+                            </div>
+                        </aside>
+                    )}
 
                     {/* MAIN CONTENT AREA WRAPPER */}
                     <main className="flex-1 h-full overflow-hidden bg-[var(--main-bg)] relative flex flex-row">
+
+                        {/* Hidden Exit Button for Customer Menu Kiosk Mode */}
+                        {currentView === View.CUSTOMER_MENU && (
+                            <button
+                                onClick={handleExitKiosk}
+                                className="absolute bottom-0 left-0 w-16 h-16 opacity-0 hover:opacity-10 transition-opacity bg-black flex items-center justify-center text-white z-50 cursor-pointer"
+                                title="Tocar 5 veces rápido para salir"
+                            >
+                                <Lock size={24} />
+                            </button>
+                        )}
 
                         {/* COLUMN 2: CENTER CONTENT (Dynamic Grid) */}
                         <div className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -775,6 +808,9 @@ const MainContent: React.FC = () => {
                                         isAddingNewProduct
                                             ? <AddProductForm onSuccess={() => { setIsAddingNewProduct(false); loadData(); }} onCancel={() => setIsAddingNewProduct(false)} />
                                             : <ProductManagement products={products} onEdit={setEditingProduct} onDelete={handleDeleteProduct} onAddNew={() => setIsAddingNewProduct(true)} />
+                                    )}
+                                    {currentView === View.CUSTOMER_MENU && (
+                                        <CustomerMenu products={products} ingredientsMap={ingredientsMap} />
                                     )}
                                     {currentView === View.INVENTORY && userRole === 'admin' && <InventoryTable />}
                                     {currentView === View.SALES_HISTORY && (
@@ -879,8 +915,8 @@ const MainContent: React.FC = () => {
                                                                 <button
                                                                     onClick={() => toggleRedeem(item.cartId)}
                                                                     className={`p-2 rounded-lg transition-colors border ${item.isRedeemed
-                                                                            ? 'bg-green-100 text-green-600 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-                                                                            : 'bg-white text-orange-400 border-orange-200 hover:bg-orange-50 dark:bg-gray-700 dark:text-orange-400 dark:border-gray-600 dark:hover:bg-gray-600'
+                                                                        ? 'bg-green-100 text-green-600 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                                        : 'bg-white text-orange-400 border-orange-200 hover:bg-orange-50 dark:bg-gray-700 dark:text-orange-400 dark:border-gray-600 dark:hover:bg-gray-600'
                                                                         }`}
                                                                     title={item.isRedeemed ? 'Cancelar Canje' : 'Canjear (10 sellos)'}
                                                                 >
